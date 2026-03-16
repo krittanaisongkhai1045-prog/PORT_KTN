@@ -1,0 +1,3171 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="WealthOS">
+<meta name="theme-color" content="#06080f">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>WealthOS</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg0:#06080f;--bg1:#0b0e1a;--bg2:#111422;--bg3:#181c2e;--bg4:#1f2438;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --text:#dde3f8;--muted:#515878;--muted2:#7c85aa;
+  --g:#00dfa0;--b:#4b96ff;--y:#f0b730;--r:#ff4f6a;--p:#b87dff;--o:#ff8c42;--t:#00ccd4;
+  --ga:rgba(0,223,160,.13);--ba:rgba(75,150,255,.13);--ya:rgba(240,183,48,.13);
+  --ra:rgba(255,79,106,.13);--pa:rgba(184,125,255,.13);--oa:rgba(255,140,66,.13);
+  --rad:14px;--rads:9px;--safe-t:env(safe-area-inset-top,0px);--safe-b:env(safe-area-inset-bottom,0px);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%;font-size:14px}
+body{font-family:'Outfit',system-ui,sans-serif;background:var(--bg0);color:var(--text);
+  min-height:100dvh;overflow-x:hidden;line-height:1.55;
+  padding-bottom:calc(68px + var(--safe-b))}
+body::before{content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse 80% 50% at 20% -10%,rgba(0,223,160,.04),transparent),
+             radial-gradient(ellipse 60% 40% at 80% 110%,rgba(75,150,255,.04),transparent)}
+#app{position:relative;z-index:1;max-width:430px;margin:0 auto}
+::-webkit-scrollbar{width:3px}::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:3px}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:200;background:rgba(6,8,15,.9);
+  backdrop-filter:blur(28px);border-bottom:1px solid var(--border);
+  padding:calc(var(--safe-t) + 9px) 16px 9px;
+  display:flex;align-items:center;justify-content:space-between;gap:10px}
+.logo{font-weight:900;font-size:17px;letter-spacing:-.03em;flex-shrink:0;
+  background:linear-gradient(120deg,var(--g),var(--b));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+#tt{font-weight:700;font-size:14px;flex:1;text-align:center}
+#ta{flex-shrink:0}
+
+/* ── BOTTOM NAV ── */
+.bnav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);
+  width:100%;max-width:430px;z-index:200;background:rgba(11,14,26,.97);
+  backdrop-filter:blur(24px);border-top:1px solid var(--border);
+  display:flex;padding-bottom:var(--safe-b)}
+.nb{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:9px 0 8px;border:none;background:transparent;color:var(--muted);cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:8.5px;font-weight:600;letter-spacing:.02em;
+  text-transform:uppercase;transition:color .15s}
+.nb .ic{font-size:19px;transition:transform .2s}
+.nb.active{color:var(--g)}.nb.active .ic{transform:translateY(-2px)}
+
+/* ── PAGES ── */
+.page{display:none;padding:12px}
+.page.active{display:block;animation:fu .18s ease}
+@keyframes fu{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── PRICE BAR ── */
+.pricebar{display:flex;gap:7px;overflow-x:auto;padding:6px 12px;
+  border-bottom:1px solid var(--border);background:var(--bg1);scrollbar-width:none}
+.pricebar::-webkit-scrollbar{display:none}
+.pchip{display:flex;flex-direction:column;align-items:center;background:var(--bg2);
+  border:1px solid var(--border);border-radius:8px;padding:5px 10px;flex-shrink:0;min-width:66px}
+.pchip .ps{font-size:9px;color:var(--muted2);font-weight:700}
+.pchip .pp{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600}
+.pchip .pc{font-size:9px;font-weight:600}
+.pchip.up .pp,.pchip.up .pc{color:var(--g)}.pchip.dn .pp,.pchip.dn .pc{color:var(--r)}
+
+/* ── STATUSBAR ── */
+.sbar{display:flex;align-items:center;gap:6px;padding:5px 12px;
+  font-size:10px;color:var(--muted2);border-bottom:1px solid var(--border);background:var(--bg1)}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--bg4);
+  border-top-color:var(--g);border-radius:50%;animation:sp .7s linear infinite;flex-shrink:0}
+@keyframes sp{to{transform:rotate(360deg)}}
+
+/* ── KPI GRID ── */
+.kg{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:11px}
+.kg.c3{grid-template-columns:1fr 1fr 1fr}.kg.c1{grid-template-columns:1fr}
+.kpi{background:var(--bg1);border:1px solid var(--border);border-radius:var(--rad);
+  padding:13px 14px;position:relative;overflow:hidden}
+.kpi::after{content:'';position:absolute;top:-20px;right:-20px;
+  width:60px;height:60px;border-radius:50%;opacity:.18}
+.kpi.g::after{background:var(--g)}.kpi.b::after{background:var(--b)}
+.kpi.y::after{background:var(--y)}.kpi.r::after{background:var(--r)}
+.kpi.p::after{background:var(--p)}.kpi.o::after{background:var(--o)}
+.kl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.kv{font-family:'JetBrains Mono',monospace;font-size:16px;font-weight:700;margin-top:2px;line-height:1.2}
+.kv.g{color:var(--g)}.kv.b{color:var(--b)}.kv.y{color:var(--y)}.kv.r{color:var(--r)}
+.kv.p{color:var(--p)}.kv.o{color:var(--o)}
+.ks{font-size:10px;color:var(--muted);margin-top:2px}
+.kico{font-size:16px;margin-bottom:4px}
+
+/* ── CARD ── */
+.card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--rad);margin-bottom:11px;overflow:hidden}
+.ch{padding:10px 14px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between}
+.ct{font-weight:700;font-size:12px;display:flex;align-items:center;gap:5px}
+.cb{padding:12px 14px}
+
+/* ── TAG ── */
+.tag{display:inline-block;padding:2px 7px;border-radius:5px;
+  font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.tg{background:var(--ga);color:var(--g);border:1px solid rgba(0,223,160,.2)}
+.tb{background:var(--ba);color:var(--b);border:1px solid rgba(75,150,255,.2)}
+.ty{background:var(--ya);color:var(--y);border:1px solid rgba(240,183,48,.2)}
+.tr{background:var(--ra);color:var(--r);border:1px solid rgba(255,79,106,.2)}
+.tp{background:var(--pa);color:var(--p);border:1px solid rgba(184,125,255,.2)}
+.to{background:var(--oa);color:var(--o);border:1px solid rgba(255,140,66,.2)}
+.tm{background:rgba(255,255,255,.05);color:var(--muted2);border:1px solid var(--border)}
+
+/* ── BUTTONS ── */
+.btn{padding:9px 18px;border-radius:var(--rads);border:none;cursor:pointer;
+  font-family:'Outfit',sans-serif;font-size:13px;font-weight:600;
+  display:inline-flex;align-items:center;justify-content:center;gap:6px;
+  transition:all .15s;white-space:nowrap;line-height:1}
+.btn-g{background:var(--g);color:#031209}
+.btn-b{background:var(--b);color:#fff}
+.btn-y{background:var(--y);color:#0a0700}
+.btn-r{background:var(--r);color:#fff}
+.btn-p{background:var(--p);color:#0a0316}
+.btn-ghost{background:var(--bg3);color:var(--muted2);border:1px solid var(--border)}
+.btn-sm{padding:6px 13px;font-size:12px}
+.btn-xs{padding:4px 9px;font-size:11px;border-radius:6px}
+.btn-full{width:100%}
+.btico{padding:6px 8px;font-size:14px}
+
+/* ── FORMS ── */
+.fg{margin-bottom:11px}
+.fl{display:block;font-size:10px;color:var(--muted2);text-transform:uppercase;
+  letter-spacing:.08em;font-weight:600;margin-bottom:5px}
+.fi,.fs{width:100%;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--rads);color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:14px;outline:none;transition:border-color .15s;-webkit-appearance:none}
+.fi:focus,.fs:focus{border-color:var(--g)}
+.fs option{background:var(--bg2)}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.fhint{font-size:10px;color:var(--muted);margin-top:3px}
+.fhint.ok{color:var(--g)}
+
+/* ── MODAL ── */
+.mov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.83);
+  backdrop-filter:blur(10px);z-index:500;align-items:flex-end;justify-content:center}
+.mov.open{display:flex}
+.modal{background:var(--bg1);border:1px solid var(--border2);
+  border-radius:20px 20px 0 0;width:100%;max-width:430px;
+  max-height:93dvh;overflow-y:auto;padding-bottom:calc(14px + var(--safe-b));
+  animation:mu .22s cubic-bezier(.32,.72,0,1)}
+@keyframes mu{from{transform:translateY(40px);opacity:.4}to{transform:translateY(0);opacity:1}}
+.mh2{width:38px;height:4px;background:var(--bg4);border-radius:4px;margin:11px auto 0}
+.mhead{padding:13px 18px 0;display:flex;align-items:center;justify-content:space-between}
+.mtitle{font-weight:800;font-size:15px}
+.mbody{padding:13px 18px}
+.mfoot{padding:0 18px;display:flex;gap:9px}
+
+/* ── ASSET CARD ── */
+.asset{background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--rads);padding:11px 13px;margin-bottom:8px}
+.asy{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:15px}
+.aname{font-size:10px;color:var(--muted2);margin-top:1px}
+.arow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.acell{flex:1;min-width:60px}
+.acl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+.acv{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:600;margin-top:1px}
+.div{height:1px;background:var(--border);margin:8px 0}
+.pos{color:var(--g)}.neg{color:var(--r)}
+.mono{font-family:'JetBrains Mono',monospace}
+.pbar-w{background:var(--bg4);border-radius:4px;height:5px;overflow:hidden;margin:3px 0}
+.pbar{height:100%;border-radius:4px;transition:width .5s ease}
+
+/* ── FOREX BOT CARD ── */
+.fport{background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--rads);padding:13px 15px;margin-bottom:9px}
+.fport-name{font-weight:700;font-size:14px;margin-bottom:3px}
+.fport-bal{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--b)}
+.with-row{padding:9px 14px;border-bottom:1px solid var(--border);
+  display:flex;justify-content:space-between;align-items:center}
+
+/* ── REBALANCE RESULT ITEM ── */
+.reb{background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--rads);padding:10px 13px;margin-bottom:7px}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:78px;left:50%;transform:translateX(-50%) translateY(30px);
+  background:var(--bg2);border:1px solid var(--border2);border-radius:26px;
+  padding:8px 18px;font-size:13px;z-index:9999;transition:all .22s;
+  pointer-events:none;box-shadow:0 8px 32px rgba(0,0,0,.6);white-space:nowrap;opacity:0}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1}
+
+/* ── CHART ── */
+.cwrap{position:relative;height:180px}
+
+/* ══ PIN LOCK SCREEN ══════════════════════════════════════════════════ */
+#pin-screen{
+  position:fixed;inset:0;z-index:9000;
+  background:var(--bg0);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0);
+  gap:0;
+}
+#pin-screen::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 70% 50% at 30% 20%,rgba(0,223,160,.055),transparent),
+    radial-gradient(ellipse 60% 60% at 75% 80%,rgba(75,150,255,.055),transparent);
+}
+#pin-screen.hidden{display:none}
+.pin-logo{
+  font-weight:900;font-size:22px;letter-spacing:-.04em;margin-bottom:6px;
+  background:linear-gradient(120deg,var(--g),var(--b));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  position:relative;z-index:1;
+}
+.pin-title{font-size:13px;color:var(--muted2);font-weight:500;margin-bottom:32px;position:relative;z-index:1}
+.pin-dots{display:flex;gap:14px;margin-bottom:36px;position:relative;z-index:1}
+.pin-dot{
+  width:14px;height:14px;border-radius:50%;
+  border:2px solid var(--bg4);background:transparent;
+  transition:all .15s cubic-bezier(.4,0,.2,1);
+}
+.pin-dot.filled{background:var(--b);border-color:var(--b);transform:scale(1.15)}
+.pin-dot.error{background:var(--r);border-color:var(--r)}
+#pin-screen.shake .pin-dots{animation:pin-shake .38s ease}
+@keyframes pin-shake{
+  0%,100%{transform:translateX(0)}
+  15%{transform:translateX(-8px)}
+  30%{transform:translateX(8px)}
+  45%{transform:translateX(-6px)}
+  60%{transform:translateX(6px)}
+  75%{transform:translateX(-3px)}
+  90%{transform:translateX(3px)}
+}
+.pin-pad{
+  display:grid;grid-template-columns:repeat(3,72px);
+  grid-template-rows:repeat(4,72px);gap:10px;
+  position:relative;z-index:1;
+}
+.pin-key{
+  width:72px;height:72px;border-radius:50%;border:none;
+  background:var(--bg2);border:1px solid var(--border2);
+  color:var(--text);font-family:'Outfit',sans-serif;
+  font-size:22px;font-weight:600;cursor:pointer;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  line-height:1;gap:1px;
+  transition:background .1s,transform .08s,border-color .1s;
+  -webkit-tap-highlight-color:transparent;user-select:none;
+}
+.pin-key:active{background:var(--bg4);transform:scale(.93);border-color:var(--border)}
+.pin-key.pin-key-0{grid-column:2}
+.pin-key.pin-key-del{grid-column:3;background:transparent;border-color:transparent;font-size:20px;color:var(--muted2)}
+.pin-key.pin-key-del:active{background:var(--bg3);border-color:var(--border)}
+.pin-sub{font-size:8px;color:var(--muted);letter-spacing:.06em;font-weight:500}
+.pin-err{font-size:12px;color:var(--r);margin-top:-24px;margin-bottom:24px;
+  min-height:18px;font-weight:600;position:relative;z-index:1;text-align:center}
+.pin-hint{font-size:11px;color:var(--muted);margin-top:20px;position:relative;z-index:1;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+
+/* ── PIN SETUP MODAL ── */
+#pin-setup-wrap{
+  position:fixed;inset:0;z-index:9100;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(12px);
+  display:flex;align-items:flex-end;justify-content:center;
+}
+#pin-setup-wrap.hidden{display:none}
+.pin-setup-box{
+  background:var(--bg1);border:1px solid var(--border2);
+  border-radius:20px 20px 0 0;width:100%;max-width:430px;
+  padding:0 0 calc(20px + env(safe-area-inset-bottom,0));
+  animation:mu .22s cubic-bezier(.32,.72,0,1);
+}
+.pin-setup-step{padding:22px 24px 16px;text-align:center}
+.pin-setup-step h3{font-size:17px;font-weight:800;margin-bottom:6px}
+.pin-setup-step p{font-size:12px;color:var(--muted2);line-height:1.6}
+
+/* ── PIN SETTINGS BUTTON ── */
+.pin-settings-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:12px 14px;background:var(--bg2);border:1px solid var(--border);
+  border-radius:var(--rads);margin-bottom:8px;cursor:pointer;
+}
+.pin-settings-row:active{background:var(--bg3)}
+
+/* ── BUDGET ── */
+.bcat-row{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  border-bottom:1px solid var(--border);transition:background .1s}
+.bcat-row:last-child{border-bottom:none}
+.bcat-icon{font-size:20px;width:28px;text-align:center;flex-shrink:0}
+.bcat-name{flex:1;font-size:13px;font-weight:600}
+.bcat-budget{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--muted2);text-align:right;min-width:80px}
+.bcat-bar-wrap{height:4px;background:var(--bg4);border-radius:4px;margin-top:4px;overflow:hidden}
+.bcat-bar{height:100%;border-radius:4px;transition:width .5s ease}
+.binc-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border)}
+.binc-row:last-child{border-bottom:none}
+.budget-edit-input{width:100%;padding:9px 12px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:var(--rads);color:var(--text);font-family:'JetBrains Mono',monospace;
+  font-size:14px;text-align:right;outline:none;transition:border-color .15s}
+.budget-edit-input:focus{border-color:var(--g)}
+.mnav{display:flex;align-items:center;justify-content:space-between;
+  background:var(--bg2);border:1px solid var(--border);border-radius:var(--rads);
+  padding:8px 14px;margin-bottom:11px}
+.mnav-btn{background:none;border:none;color:var(--muted2);font-size:18px;cursor:pointer;
+  padding:2px 8px;border-radius:6px;transition:background .12s}
+.mnav-btn:active{background:var(--bg4)}
+.mnav-label{font-weight:700;font-size:14px}
+.entry-row{display:flex;align-items:center;gap:9px;padding:9px 14px;
+  border-bottom:1px solid var(--border)}
+.entry-row:last-child{border-bottom:none}
+
+/* ── TGT CHIPS ── */
+.tgt-chip{
+  padding:5px 11px;border-radius:20px;border:1px solid var(--border2);
+  background:var(--bg3);color:var(--muted2);font-family:'Outfit',sans-serif;
+  font-size:11px;font-weight:700;cursor:pointer;transition:all .12s;
+  display:inline-flex;align-items:center;gap:4px;white-space:nowrap;
+}
+.tgt-chip:active{transform:scale(.94)}
+.tgt-chip.selected{background:rgba(75,150,255,.18);border-color:var(--b);color:var(--b)}
+.tgt-chip.blueprint{border-color:rgba(0,223,160,.3);color:var(--g)}
+.tgt-chip.blueprint.selected{background:rgba(0,223,160,.15);border-color:var(--g)}
+
+/* ── INVEST SUB-TABS ── */
+.itabs{display:flex;gap:0;background:var(--bg2);border:1px solid var(--border);
+  border-radius:10px;padding:3px;margin-bottom:12px}
+.itab{flex:1;padding:7px 0;border:none;background:transparent;color:var(--muted2);
+  font-family:'Outfit',sans-serif;font-size:12px;font-weight:600;cursor:pointer;
+  border-radius:7px;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:5px}
+.itab.active{background:var(--bg4);color:var(--text)}
+
+/* ── PRICE ROW ── */
+.pxrow{display:flex;align-items:center;gap:9px;padding:10px 14px;
+  border-bottom:1px solid var(--border);transition:background .12s}
+.pxrow:last-child{border-bottom:none}
+.pxrow:hover{background:rgba(255,255,255,.02)}
+.pxsym{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:14px;min-width:52px}
+.pxname{font-size:10px;color:var(--muted2);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:90px}
+.pxinput{flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border2);
+  border-radius:7px;color:var(--text);font-family:'JetBrains Mono',monospace;
+  font-size:14px;font-weight:600;text-align:right;outline:none;min-width:0;
+  transition:border-color .15s}
+.pxinput:focus{border-color:var(--b)}
+.pxinput.saved{border-color:var(--g);animation:px-flash .4s ease}
+@keyframes px-flash{0%{background:rgba(0,223,160,.15)}100%{background:var(--bg3)}}
+.pxchg{font-size:10px;font-weight:700;min-width:44px;text-align:right;flex-shrink:0}
+.pxbtn{padding:6px 9px;border-radius:6px;border:none;background:var(--bg3);
+  border:1px solid var(--border2);color:var(--muted2);cursor:pointer;font-size:13px;
+  flex-shrink:0;transition:all .15s;line-height:1}
+.pxbtn:hover{color:var(--b);border-color:var(--b)}
+.pxbtn.loading{animation:sp .7s linear infinite;opacity:.6;pointer-events:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+<div class="topbar">
+  <div class="logo">⬡ WealthOS</div>
+  <div id="tt"></div>
+  <div style="display:flex;align-items:center;gap:6px">
+    <button id="lang-btn" onclick="toggleLang()"
+      style="background:var(--bg3);border:1px solid var(--border2);border-radius:7px;
+             color:var(--muted2);font-family:'Outfit';font-size:11px;font-weight:700;
+             padding:4px 9px;cursor:pointer;transition:all .15s;letter-spacing:.03em">
+      EN
+    </button>
+    <div id="ta"></div>
+  </div>
+</div>
+
+<div class="sbar">
+  <div class="spin" id="pspin" style="display:none"></div>
+  <span id="stxt"></span>
+</div>
+<div class="pricebar" id="pbar2"></div>
+
+<div class="page active" id="pg-dash"></div>
+<div class="page" id="pg-invest"></div>
+<div class="page" id="pg-rebal"></div>
+<div class="page" id="pg-budget"></div>
+<div class="page" id="pg-reserve"></div>
+<div class="page" id="pg-forex"></div>
+
+<nav class="bnav">
+  <button class="nb active" data-p="dash"    onclick="go('dash')"><span class="ic">📊</span><span class='nb-lbl'></span></button>
+  <button class="nb"         data-p="invest"  onclick="go('invest')"><span class="ic">📈</span><span class='nb-lbl'></span></button>
+  <button class="nb"         data-p="rebal"   onclick="go('rebal')"><span class="ic">⚖️</span><span class='nb-lbl'></span></button>
+  <button class="nb"         data-p="budget"  onclick="go('budget')"><span class="ic">💰</span><span class='nb-lbl'></span></button>
+  <button class="nb"         data-p="reserve" onclick="go('reserve')"><span class="ic">🏦</span><span class='nb-lbl'></span></button>
+  <button class="nb"         data-p="forex"   onclick="go('forex')"><span class="ic">🤖</span><span class='nb-lbl'></span></button>
+</nav>
+</div>
+
+<!-- ══ MODALS ══════════════════════════════════════════════════════ -->
+
+<!-- INVEST -->
+<div class="mov" id="m-inv">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle" id="mi-t">➕ เพิ่มสินทรัพย์</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-inv')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="fg">
+      <label class="fl">Symbol</label>
+      <input class="fi" id="mi-sym" placeholder="เช่น NVDA, IVV, GOLD..." list="sdl" autocomplete="off" oninput="onSym(this.value)">
+      <datalist id="sdl"></datalist>
+      <div class="fhint ok" id="mi-sh"></div>
+    </div>
+    <div class="fg">
+      <label class="fl">ชื่อเต็ม</label>
+      <input class="fi" id="mi-name" placeholder="ชื่อสินทรัพย์">
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">Sector</label>
+        <select class="fs" id="mi-cat">
+          <option value="FOUNDATION">🏛️ ฐานของพอร์ต</option>
+          <option value="PILLAR">⚙️ เสาหลัก</option>
+          <option value="LEADER">🚀 6 ผู้นำ</option>
+          <option value="RAW">🪨 วัตถุดิบต้นน้ำ</option>
+          <option value="OTHER">📦 อื่นๆ</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label class="fl">วันที่ซื้อ</label>
+        <input class="fi" type="date" id="mi-date">
+      </div>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">ราคาซื้อ (USD)</label>
+        <input class="fi" type="number" id="mi-buy" placeholder="0.00" step="any" oninput="onBuyInput()">
+      </div>
+      <div class="fg">
+        <label class="fl">เงินที่ลงทุน (฿)</label>
+        <input class="fi" type="number" id="mi-total" placeholder="0.00" step="any" oninput="onTotalInput()">
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">จำนวนหุ้น/หน่วย</label>
+      <input class="fi" type="number" id="mi-qty" placeholder="คำนวณจากเงินบาท หรือกรอกเอง" step="any" oninput="onQtyInput()">
+      <div class="fhint" id="mi-th"></div>
+    </div>
+    <!-- PRICE MODE TOGGLE -->
+    <div class="fg">
+      <label class="fl">โหมดราคาปัจจุบัน</label>
+      <div style="display:flex;gap:7px">
+        <button id="pm-auto-btn" class="btn btn-b btn-sm" onclick="setPriceMode('auto')">📡 ดึงอัตโนมัติ</button>
+        <button id="pm-manual-btn" class="btn btn-ghost btn-sm" onclick="setPriceMode('manual')">📝 กรอกรายเดือน</button>
+      </div>
+    </div>
+    <!-- AUTO MODE -->
+    <div id="pm-auto-sec" class="fg">
+      <label class="fl">ราคาปัจจุบัน (USD)</label>
+      <div style="display:flex;gap:7px;align-items:stretch">
+        <input class="fi" type="number" id="mi-cur" placeholder="0.00" step="any" style="flex:1">
+        <button class="btn btn-b btn-sm" id="mi-fetch-btn" onclick="fetchSinglePrice()" style="flex-shrink:0;white-space:nowrap">📡 ดึงราคา</button>
+      </div>
+      <div class="fhint ok" id="mi-ch"></div>
+      <div class="fhint" id="mi-sym-shared" style="margin-top:4px"></div>
+    </div>
+    <!-- MANUAL MONTHLY MODE -->
+    <div id="pm-manual-sec" style="display:none;margin-bottom:11px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <label class="fl" style="margin:0">ราคารายเดือน (USD)</label>
+        <button class="btn btn-ghost btn-xs" onclick="addPriceRow()">+ เพิ่มเดือน</button>
+      </div>
+      <div id="mi-ph-list" style="max-height:200px;overflow-y:auto"></div>
+      <div class="fhint" id="mi-ph-hint" style="margin-top:5px">💡 ราคาของเดือนล่าสุดจะใช้เป็นราคาปัจจุบัน</div>
+    </div>
+    <div class="fg">
+      <label class="fl">% เป้าหมายในพอร์ต</label>
+      <div id="mi-tgt-chips" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="fi" type="number" id="mi-tgt" placeholder="กรอกเอง หรือเลือกด้านบน" step="0.5" min="0" max="100" oninput="onTgtInput(this.value)" style="flex:1">
+        <span style="font-size:13px;color:var(--muted2);flex-shrink:0">%</span>
+      </div>
+      <div class="fhint" id="mi-tgt-hint"></div>
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-b btn-full" onclick="saveInv()">💾 บันทึก</button>
+    <button class="btn btn-ghost" onclick="cm('m-inv')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+
+<!-- RESERVE -->
+<div class="mov" id="m-res">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle" id="mr-t">➕ บันทึกธุรกรรม</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-res')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">วันที่</label>
+        <input class="fi" type="date" id="rr-d">
+      </div>
+      <div class="fg">
+        <label class="fl">ประเภท</label>
+        <select class="fs" id="rr-t">
+          <option value="income">💚 รายรับ</option>
+          <option value="expense">🔴 รายจ่าย</option>
+        </select>
+      </div>
+    </div>
+    <div class="fg">
+      <label class="fl">หมวดหมู่</label>
+      <select class="fs" id="rr-c">
+        <option>เงินเดือน</option><option>โบนัส</option><option>รายได้ลงทุน</option>
+        <option>รายได้อื่น</option><option>อาหาร</option><option>เดินทาง</option>
+        <option>ที่พัก</option><option>ช็อปปิ้ง</option><option>สุขภาพ</option>
+        <option>โอนลงทุน</option><option>อื่นๆ</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label class="fl">รายละเอียด</label>
+      <input class="fi" id="rr-desc" placeholder="บรรยายสั้นๆ">
+    </div>
+    <div class="fg">
+      <label class="fl">จำนวนเงิน (฿)</label>
+      <input class="fi" type="number" id="rr-a" placeholder="0.00" step="0.01" min="0">
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-g btn-full" onclick="saveRes()">💾 บันทึก</button>
+    <button class="btn btn-ghost" onclick="cm('m-res')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+<!-- FOREX PORT -->
+<div class="mov" id="m-fp">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle" id="mfp-t">➕ เพิ่ม Bot Portfolio</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-fp')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="fg">
+      <label class="fl">ชื่อพอร์ต</label>
+      <input class="fi" id="fp-name" placeholder="เช่น Bot A, XAUUSD Scalper...">
+    </div>
+    <div class="fg">
+      <label class="fl">ยอดเงินในพอร์ต (฿)</label>
+      <input class="fi" type="number" id="fp-bal" placeholder="0.00" step="any" min="0">
+    </div>
+    <div class="fg">
+      <label class="fl">บันทึกเพิ่มเติม (ถ้ามี)</label>
+      <input class="fi" id="fp-note" placeholder="—">
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-b btn-full" onclick="saveFp()">💾 บันทึก</button>
+    <button class="btn btn-ghost" onclick="cm('m-fp')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+<!-- FOREX WITHDRAWAL -->
+<div class="mov" id="m-fw">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle">💸 บันทึกการถอนกำไร</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-fw')">✕</button>
+  </div>
+  <div class="mbody">
+    <div class="fg">
+      <label class="fl">ถอนจากพอร์ต</label>
+      <select class="fs" id="fw-pid"></select>
+    </div>
+    <div class="fr">
+      <div class="fg">
+        <label class="fl">วันที่ถอน</label>
+        <input class="fi" type="date" id="fw-d">
+      </div>
+      <div class="fg">
+        <label class="fl">จำนวนที่ถอน (฿)</label>
+        <input class="fi" type="number" id="fw-a" placeholder="0.00" step="any" min="0">
+      </div>
+    </div>
+
+    <!-- ปลายทางของเงิน -->
+    <div class="fg">
+      <label class="fl">เงินที่ถอนนำไปทำอะไร?</label>
+      <div style="display:flex;flex-direction:column;gap:7px" id="fw-dest-opts">
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rads);cursor:pointer" onclick="setFwDest('reserve')">
+          <input type="radio" name="fw-dest" value="reserve" id="fw-r-res" style="accent-color:var(--g);width:16px;height:16px">
+          <div>
+            <div style="font-weight:600;font-size:13px">🏦 โยกไปเงินสำรอง</div>
+            <div style="font-size:10px;color:var(--muted)">บันทึกเป็นรายรับในหน้าเงินสำรองอัตโนมัติ</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rads);cursor:pointer" onclick="setFwDest('expense')">
+          <input type="radio" name="fw-dest" value="expense" id="fw-r-exp" style="accent-color:var(--r);width:16px;height:16px">
+          <div>
+            <div style="font-weight:600;font-size:13px">🛍️ นำไปใช้จ่าย</div>
+            <div style="font-size:10px;color:var(--muted)">บันทึกเฉพาะใน FX — ไม่กระทบเงินสำรอง</div>
+          </div>
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--rads);cursor:pointer" onclick="setFwDest('none')">
+          <input type="radio" name="fw-dest" value="none" id="fw-r-none" checked style="accent-color:var(--muted);width:16px;height:16px">
+          <div>
+            <div style="font-weight:600;font-size:13px">📋 บันทึกการถอนอย่างเดียว</div>
+            <div style="font-size:10px;color:var(--muted)">บันทึกเฉพาะใน FX — ไม่กระทบเงินสำรอง</div>
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <!-- หมวดหมู่ ถ้าเลือกค่าใช้จ่าย -->
+    <div class="fg" id="fw-cat-wrap" style="display:none">
+      <label class="fl">หมวดหมู่ค่าใช้จ่าย</label>
+      <select class="fs" id="fw-cat">
+        <option>กำไร FOREX</option><option>ช็อปปิ้ง</option><option>อาหาร</option>
+        <option>เดินทาง</option><option>ที่พัก</option><option>สุขภาพ</option><option>อื่นๆ</option>
+      </select>
+    </div>
+
+    <div class="fg">
+      <label class="fl">หมายเหตุ</label>
+      <input class="fi" id="fw-note" placeholder="—">
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-g btn-full" onclick="saveFw()">💾 บันทึก</button>
+    <button class="btn btn-ghost" onclick="cm('m-fw')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+<!-- REBAL CONFIRM DETAIL -->
+<div class="mov" id="m-reb">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle">⚖️ ผลการ Rebalance</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-reb')">✕</button>
+  </div>
+  <div class="mbody" id="reb-detail"></div>
+  <div class="mfoot" style="padding-bottom:14px">
+    <button class="btn btn-ghost btn-full" onclick="cm('m-reb')">ปิด</button>
+  </div>
+</div>
+</div>
+
+<!-- DELETE -->
+<div class="mov" id="m-del">
+<div class="modal" style="border-radius:18px">
+  <div class="mh2"></div>
+  <div class="mbody" style="text-align:center;padding-top:20px">
+    <div style="font-size:38px;margin-bottom:8px">🗑️</div>
+    <div style="font-weight:800;font-size:15px;margin-bottom:5px">${T('confirm_delete')}</div>
+    <p style="color:var(--muted);font-size:12px">${T('confirm_delete_sub')}</p>
+  </div>
+  <div class="mfoot" style="padding-bottom:20px">
+    <button class="btn btn-r btn-full" id="del-ok">${T('confirm_delete_btn')}</button>
+    <button class="btn btn-ghost btn-full" onclick="cm('m-del')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ PIN LOCK SCREEN ═══════════════════════════════════════════════ -->
+<div id="pin-screen" class="hidden">
+  <div class="pin-logo">⬡ WealthOS</div>
+  <div class="pin-title" id="pin-title">กรอก PIN เพื่อเข้าใช้งาน</div>
+  <div class="pin-dots" id="pin-dots"></div>
+  <div class="pin-err" id="pin-err"></div>
+  <div class="pin-pad" id="pin-pad"></div>
+  <div class="pin-hint" id="pin-hint" onclick="pinForgot()" style="display:none">ลืม PIN? รีเซ็ต (ข้อมูลจะหาย)</div>
+</div>
+
+<!-- ══ PIN SETUP SHEET ════════════════════════════════════════════════ -->
+<div id="pin-setup-wrap" class="hidden">
+  <div class="pin-setup-box">
+    <div style="width:38px;height:4px;background:var(--bg4);border-radius:4px;margin:12px auto 0"></div>
+    <div class="pin-setup-step">
+      <h3 id="pss-title">🔐 ตั้ง PIN ใหม่</h3>
+      <p id="pss-desc">กรอก PIN 4-6 หลักเพื่อป้องกันการเข้าถึงข้อมูล</p>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:center;gap:0;padding-bottom:8px">
+      <div class="pin-dots" id="pss-dots"></div>
+      <div class="pin-err" id="pss-err" style="margin-top:-16px;margin-bottom:20px"></div>
+      <div class="pin-pad" id="pss-pad"></div>
+    </div>
+    <div style="padding:0 20px;display:flex;gap:8px">
+      <button class="btn btn-ghost btn-full btn-sm" onclick="closePinSetup()">ยกเลิก</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ BUDGET ENTRY MODAL ═══════════════════════════════════════════════ -->
+<div class="mov" id="m-bentry">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle" id="mbentry-t">+ บันทึกรายการ</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-bentry')">✕</button>
+  </div>
+  <div class="mbody">
+    <!-- type toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:14px">
+      <button id="betype-inc" class="btn btn-g btn-sm btn-full" onclick="setBEType('income')">💚 รายรับ</button>
+      <button id="betype-exp" class="btn btn-ghost btn-sm btn-full" onclick="setBEType('expense')">🔴 รายจ่าย</button>
+    </div>
+    <div class="fg">
+      <label class="fl">เดือน</label>
+      <input class="fi" type="month" id="be-month">
+    </div>
+    <div class="fg">
+      <label class="fl">หมวดหมู่</label>
+      <select class="fs" id="be-cat"></select>
+    </div>
+    <div class="fg">
+      <label class="fl">จำนวนเงิน (฿)</label>
+      <input class="fi" type="number" id="be-amount" placeholder="0.00" step="any" min="0">
+    </div>
+    <div class="fg">
+      <label class="fl">หมายเหตุ (ถ้ามี)</label>
+      <input class="fi" id="be-note" placeholder="—">
+    </div>
+  </div>
+  <div class="mfoot">
+    <button class="btn btn-g btn-full" onclick="saveBEntry()">💾 บันทึก</button>
+    <button class="btn btn-ghost" onclick="cm('m-bentry')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+<!-- ══ BUDGET EDIT MODAL ══════════════════════════════════════════════ -->
+<div class="mov" id="m-budget">
+<div class="modal">
+  <div class="mh2"></div>
+  <div class="mhead">
+    <div class="mtitle" id="mbudget-t">✏️ ตั้งงบประมาณ</div>
+    <button class="btn btn-ghost btn-xs" onclick="cm('m-budget')">✕</button>
+  </div>
+  <div class="mbody" id="mbudget-body"></div>
+  <div class="mfoot">
+    <button class="btn btn-g btn-full" onclick="saveBudgetEdit()">💾 บันทึก</button>
+    <button class="btn btn-ghost" onclick="cm('m-budget')">ยกเลิก</button>
+  </div>
+</div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+'use strict';
+
+/* ══ LANGUAGE / TRANSLATION SYSTEM ══════════════════════════════════ */
+let _lang = localStorage.getItem('wo_lang') || 'th';
+
+const TRANSLATIONS = {
+  th: {
+    // nav
+    nav_dash:'Overview', nav_invest:'ลงทุน', nav_rebal:'Rebalance',
+    nav_budget:'งบ', nav_reserve:'สำรอง', nav_forex:'FX Bot',
+    // page titles
+    title_dash:'📊 ภาพรวม', title_invest:'📈 การลงทุน', title_rebal:'⚖️ Rebalance',
+    title_budget:'💰 งบประมาณ', title_reserve:'🏦 เงินสำรอง', title_forex:'🤖 FX Bot',
+    // dashboard
+    d_networth:'ทรัพย์สินสุทธิรวม', d_portfolio:'พอร์ตลงทุน', d_reserve:'เงินสำรอง',
+    d_fxbot:'FX Bot รวม', d_fxwith:'ถอนกำไรรวม', d_growth:'📈 การเติบโตรายเดือน',
+    d_sector:'🥧 Sector', d_recent:'🕐 ธุรกรรมล่าสุด', d_seeall:'ดูทั้งหมด →',
+    d_port_label:'พอร์ตลงทุน', d_reserve_label:'เงินสำรอง', d_fxacc_label:'FX ถอนสะสม',
+    // invest page
+    inv_curval:'มูลค่าปัจจุบัน', inv_pnl:'P&L', inv_cost:'ต้นทุน',
+    inv_count:'จำนวน', inv_usdthb:'$/฿', inv_tab_port:'📈 พอร์ต',
+    inv_tab_price:'💹 ราคาปัจจุบัน', inv_fetch_all:'📡 ดึงราคาทั้งหมด',
+    inv_no_asset:'ยังไม่มีสินทรัพย์', inv_no_asset_sub:'กด "+ เพิ่ม" เพื่อเริ่มต้น',
+    inv_units:'จำนวน', inv_buy_price:'ราคาซื้อ', inv_cur_price:'ราคาปัจจุบัน',
+    inv_invested:'เงินลงทุน', inv_cur_val:'มูลค่าปัจจุบัน', inv_port_pct:'% พอร์ต',
+    inv_target:'เป้า', inv_buy_more:'⬇️ซื้อเพิ่ม', inv_overweight:'⬆️มากเกิน',
+    // invest modal
+    mi_add:'➕ เพิ่มสินทรัพย์', mi_edit:'✏️ แก้ไขสินทรัพย์',
+    mi_symbol:'Symbol', mi_name:'ชื่อเต็ม', mi_sector:'Sector',
+    mi_date:'วันที่ซื้อ', mi_buy_price:'ราคาซื้อ (USD)', mi_total:'เงินที่ลงทุน (฿)',
+    mi_qty:'จำนวนหุ้น/หน่วย', mi_qty_ph:'คำนวณจากเงินบาท หรือกรอกเอง',
+    mi_price_mode:'โหมดราคาปัจจุบัน', mi_auto:'📡 ดึงอัตโนมัติ', mi_manual:'📝 กรอกรายเดือน',
+    mi_cur_price:'ราคาปัจจุบัน (USD)', mi_fetch:'📡 ดึงราคา', mi_monthly_price:'ราคารายเดือน (USD)',
+    mi_add_month:'+ เพิ่มเดือน', mi_target_pct:'% เป้าหมายในพอร์ต', mi_save:'💾 บันทึก',
+    mi_cancel:'ยกเลิก', mi_new_asset:'📝 สินทรัพย์ใหม่',
+    // rebalance
+    rb_formula:T('rb_formula'), rb_target_val:T('rb_target_val'), rb_need_buy:T('rb_need_buy'),
+    rb_sum_correct:'ผลรวมที่ซื้อแต่ละตัวจะ = เงินที่เพิ่มพอดี ✓',
+    rb_add_title:T('rb_add_title'), rb_port_cur:'พอร์ตปัจจุบัน (฿)',
+    rb_add_money:'💰 เงินที่จะเพิ่มเดือนนี้ (฿)', rb_add_ph:'20,000',
+    rb_calc:'⚖️ คำนวณ Rebalance', rb_result:T('rb_result'),
+    rb_port_before:'พอร์ตก่อนเพิ่ม', rb_add:'เงินที่เพิ่ม', rb_rate:'อัตรา',
+    rb_buy_more:'🟢 ซื้อเพิ่ม', rb_overweight:'🔴 มากกว่าเป้า', rb_hold:'⚪ ถือไว้',
+    rb_hold_sub:'(ห่างเป้าน้อยมาก)', rb_overweight_hold:'(ถือไว้)',
+    rb_real:'มีอยู่จริง', rb_goal:'เป้าหมาย', rb_diff:'ส่วนต่าง',
+    rb_total_buy:'รวมที่ต้องซื้อ (เฉพาะ +)', rb_add_money_label:'เงินที่จะเพิ่ม',
+    rb_save_round:T('rb_save_round'),
+    rb_target_pct:T('rb_target_pct'), rb_no_asset:'ยังไม่มีสินทรัพย์',
+    rb_history:T('rb_history'), rb_rounds:'รอบ',
+    rb_port_after:'พอร์ตหลัง', rb_bought:'ซื้อ',
+    rb_warn_over100:'% เป้ารวมกัน', rb_warn_over100_b:'— ควรรวมเป็น 100% เพื่อความแม่นยำ',
+    rb_diff_warn:'ต่างกัน', rb_diff_warn_b:'— เพราะ % เป้ารวมไม่ใช่ 100%',
+    rb_match:'✅ ยอดซื้อรวมตรงกับเงินที่เพิ่ม',
+    rb_no_hist:'ยังไม่มีประวัติ — กด "บันทึกรอบ Rebalance" หลังคำนวณ',
+    // budget
+    bg_income_actual:'รายรับจริง', bg_expense_actual:'รายจ่ายจริง',
+    bg_remaining:'คงเหลือ', bg_shortage:'ขาด', bg_used:'% ใช้แล้ว',
+    bg_vs_budget:T('bg_vs_budget'), bg_income:T('bg_income'), bg_expense:T('bg_expense'),
+    bg_add:'+ บันทึก', bg_transactions:T('bg_transactions'), bg_tx_count:'รายการ',
+    bg_set:T('bg_set'), bg_set_exp:T('bg_set_exp'), bg_set_inc:T('bg_set_inc'),
+    bg_above_target:'▲ เกินเป้า', bg_below_target:'▽ ขาด', bg_add_cat:T('bg_add_cat'),
+    bg_monthly_budget:'งบต่อเดือน', bg_save:'💾 บันทึก', bg_cancel:'ยกเลิก',
+    bg_add_entry_inc:T('bg_add_entry_inc'), bg_add_entry_exp:T('bg_add_entry_exp'),
+    bg_month:'เดือน', bg_cat:'หมวดหมู่', bg_amount:'จำนวนเงิน (฿)', bg_note:'หมายเหตุ (ถ้ามี)',
+    bg_note_ph:'—', bg_planned:'ตั้งไว้',
+    // reserve
+    res_bal:'คงเหลือ', res_income:'รายรับรวม', res_expense:'รายจ่ายรวม',
+    res_add:'➕ บันทึกธุรกรรม', res_edit:'✏️ แก้ไขธุรกรรม', res_no_tx:T('res_no_tx'),
+    res_filter_all:'ทั้งหมด', res_filter_inc:'รายรับ', res_filter_exp:'รายจ่าย',
+    res_date:'วันที่', res_type:'ประเภท', res_cat:'หมวดหมู่', res_desc:'รายละเอียด',
+    res_amount:'จำนวนเงิน (฿)',
+    // forex
+    fx_total_bal:'ยอดรวมทุกพอร์ต', fx_total_with:'ถอนกำไรรวม', fx_add_port:'+ เพิ่มพอร์ต',
+    fx_withdraw:'+ บันทึกการถอน', fx_no_port:'ยังไม่มีพอร์ต',
+    fx_withdrawal_hist:'ประวัติการถอน', fx_no_withdraw:T('fx_no_withdraw'),
+    fx_to_reserve:'→ เงินสำรอง', fx_to_expense:'→ ค่าใช้จ่าย',
+    // common
+    btn_save:'💾 บันทึก', btn_cancel:'ยกเลิก', btn_edit:'✏️ แก้ไข', btn_delete:'🗑️',
+    btn_add:'+ เพิ่ม', btn_add_record:'+ บันทึก', btn_update:'อัปเดต',
+    confirm_delete:'ยืนยันการลบ?', confirm_delete_sub:'ข้อมูลจะหายถาวร',
+    confirm_delete_btn:'ลบ',
+    // price bar
+    pb_loading:'กำลังดึงราคาสด...', pb_no_data:'ยังไม่มีข้อมูลราคา',
+    pb_updated:'อัปเดต', pb_fail:T('pb_fail'),
+    pb_no_asset:T('pb_no_asset'),
+    // sectors
+    sec_foundation:'🏛️ ฐานของพอร์ต', sec_pillar:'⚙️ เสาหลัก',
+    sec_leader:'🚀 ผู้นำ', sec_raw:'🪨 วัตถุดิบต้นน้ำ', sec_other:'📦 อื่นๆ',
+    // pin
+    pin_enter:'กรอก PIN เพื่อเข้าใช้งาน', pin_forgot:'ลืม PIN? รีเซ็ต (ข้อมูลจะหาย)',
+    pin_wrong:'PIN ไม่ถูกต้อง', pin_tries_left:'ครั้งที่เหลือ',
+    pin_wait:'⏳ ลองใหม่ใน', pin_wait_sec:'วินาที',
+    pin_setup_new:'🔐 ตั้ง PIN ใหม่', pin_change:'🔐 เปลี่ยน PIN',
+    pin_confirm:'✅ ยืนยัน PIN อีกครั้ง',
+    pin_digit_label:'หลัก', pin_not_match:'PIN ไม่ตรงกัน ลองใหม่',
+    pin_cancel:'ยกเลิก', pin_select:'เลือก PIN',
+    pin_settings_on:'เปิดใช้งาน', pin_settings_off:'ปิดอยู่',
+    pin_info:'🔐 PIN', pin_lock_after:'ล็อกอัตโนมัติหลัง', pin_lock_min:'5 นาที ไม่ใช้งาน',
+    pin_change_btn:'✏️ เปลี่ยน PIN', pin_disable:'🔓 ปิด PIN', pin_enable:'🔐 เปิดใช้ PIN Lock',
+    pin_protect_desc:'ป้องกันการเข้าถึงข้อมูลเมื่อคนอื่นหยิบโทรศัพท์คุณ',
+    pin_success:'ตั้ง PIN สำเร็จ 🔐', pin_disabled:'ปิด PIN lock แล้ว',
+    pin_confirm_disable:'ปิดการใช้ PIN lock ใช่ไหม?',
+    pin_confirm_reset:'⚠️ การรีเซ็ต PIN จะล้างข้อมูลทั้งหมดในแอป ยืนยันหรือไม่?',
+  },
+  en: {
+    // nav
+    nav_dash:'Overview', nav_invest:'Invest', nav_rebal:'Rebalance',
+    nav_budget:'Budget', nav_reserve:'Reserve', nav_forex:'FX Bot',
+    // page titles
+    title_dash:'📊 Overview', title_invest:'📈 Portfolio', title_rebal:'⚖️ Rebalance',
+    title_budget:'💰 Budget', title_reserve:'🏦 Reserve', title_forex:'🤖 FX Bot',
+    // dashboard
+    d_networth:'Total Net Worth', d_portfolio:'Portfolio', d_reserve:'Reserve',
+    d_fxbot:'FX Bot Total', d_fxwith:'Profit Withdrawn', d_growth:'📈 Monthly Growth',
+    d_sector:'🥧 Sector', d_recent:'🕐 Recent Transactions', d_seeall:'See all →',
+    d_port_label:'Portfolio', d_reserve_label:'Reserve', d_fxacc_label:'FX Withdrawn',
+    // invest page
+    inv_curval:'Current Value', inv_pnl:'P&L', inv_cost:'Cost',
+    inv_count:'Assets', inv_usdthb:'$/฿', inv_tab_port:'📈 Portfolio',
+    inv_tab_price:'💹 Prices', inv_fetch_all:'📡 Fetch All Prices',
+    inv_no_asset:'No assets yet', inv_no_asset_sub:'Tap "+ Add" to get started',
+    inv_units:'Units', inv_buy_price:'Buy Price', inv_cur_price:'Current Price',
+    inv_invested:'Invested', inv_cur_val:'Current Value', inv_port_pct:'% Port',
+    inv_target:'Target', inv_buy_more:'⬇️ Buy More', inv_overweight:'⬆️ Overweight',
+    // invest modal
+    mi_add:'➕ Add Asset', mi_edit:'✏️ Edit Asset',
+    mi_symbol:'Symbol', mi_name:'Full Name', mi_sector:'Sector',
+    mi_date:'Purchase Date', mi_buy_price:'Buy Price (USD)', mi_total:'Amount Invested (฿)',
+    mi_qty:'Shares / Units', mi_qty_ph:'Calc from THB or enter manually',
+    mi_price_mode:'Current Price Mode', mi_auto:'📡 Auto Fetch', mi_manual:'📝 Manual Monthly',
+    mi_cur_price:'Current Price (USD)', mi_fetch:'📡 Fetch', mi_monthly_price:'Monthly Price (USD)',
+    mi_add_month:'+ Add Month', mi_target_pct:'% Target in Portfolio', mi_save:'💾 Save',
+    mi_cancel:'Cancel', mi_new_asset:'📝 New Asset',
+    // rebalance
+    rb_formula:'⚖️ How Rebalance Works', rb_target_val:'Target Amount', rb_need_buy:'Need to Buy',
+    rb_sum_correct:'Sum of all purchases = new money added ✓',
+    rb_add_title:"Enter this month's investment", rb_port_cur:'Current Portfolio (฿)',
+    rb_add_money:'💰 Amount to Add This Month (฿)', rb_add_ph:'20,000',
+    rb_calc:'⚖️ Calculate Rebalance', rb_result:'📊 Results',
+    rb_port_before:'Portfolio Before', rb_add:'Adding', rb_rate:'Rate',
+    rb_buy_more:'🟢 Buy More', rb_overweight:'🔴 Over Target', rb_hold:'⚪ Hold',
+    rb_hold_sub:'(very close to target)', rb_overweight_hold:'(hold)',
+    rb_real:'Current', rb_goal:'Target', rb_diff:'Difference',
+    rb_total_buy:'Total to Buy (+)', rb_add_money_label:'Money to Add',
+    rb_save_round:'💾 Save This Rebalance',
+    rb_target_pct:'🎯 Target % Per Asset', rb_no_asset:'No assets yet',
+    rb_history:'📋 Rebalance History', rb_rounds:'rounds',
+    rb_port_after:'Portfolio After', rb_bought:'Bought',
+    rb_warn_over100:'Targets sum to', rb_warn_over100_b:'— should be 100% for accuracy',
+    rb_diff_warn:'Difference of', rb_diff_warn_b:'— targets do not sum to 100%',
+    rb_match:'✅ Total matches amount added',
+    rb_no_hist:'No history yet — save a rebalance round first',
+    // budget
+    bg_income_actual:'Actual Income', bg_expense_actual:'Actual Expenses',
+    bg_remaining:'Remaining', bg_shortage:'Deficit', bg_used:'% used',
+    bg_vs_budget:'Total Expenses vs Budget', bg_income:'💚 Income', bg_expense:'🔴 Expenses',
+    bg_add:'+ Record', bg_transactions:"📋 This Month's Entries", bg_tx_count:'entries',
+    bg_set:'⚙️ Budget Settings', bg_set_exp:'⚙️ Manage Expenses', bg_set_inc:'⚙️ Manage Income',
+    bg_above_target:'▲ Above target', bg_below_target:'▽ Below target', bg_add_cat:'+ Add Category',
+    bg_monthly_budget:'Monthly Budget', bg_save:'💾 Save', bg_cancel:'Cancel',
+    bg_add_entry_inc:'+ Record Income', bg_add_entry_exp:'+ Record Expense',
+    bg_month:'Month', bg_cat:'Category', bg_amount:'Amount (฿)', bg_note:'Note (optional)',
+    bg_note_ph:'—', bg_planned:'Planned',
+    // reserve
+    res_bal:'Balance', res_income:'Total Income', res_expense:'Total Expenses',
+    res_add:'➕ Add Transaction', res_edit:'✏️ Edit Transaction', res_no_tx:'No transactions yet',
+    res_filter_all:'All', res_filter_inc:'Income', res_filter_exp:'Expense',
+    res_date:'Date', res_type:'Type', res_cat:'Category', res_desc:'Description',
+    res_amount:'Amount (฿)',
+    // forex
+    fx_total_bal:'Total Balance', fx_total_with:'Total Profit Withdrawn', fx_add_port:'+ Add Portfolio',
+    fx_withdraw:'+ Record Withdrawal', fx_no_port:'No portfolios yet',
+    fx_withdrawal_hist:'Withdrawal History', fx_no_withdraw:'No withdrawals yet',
+    fx_to_reserve:'→ Reserve', fx_to_expense:'→ Expense',
+    // common
+    btn_save:'💾 Save', btn_cancel:'Cancel', btn_edit:'✏️ Edit', btn_delete:'🗑️',
+    btn_add:'+ Add', btn_add_record:'+ Record', btn_update:'Update',
+    confirm_delete:'Confirm Delete?', confirm_delete_sub:'This cannot be undone',
+    confirm_delete_btn:'Delete',
+    // price bar
+    pb_loading:'Fetching live prices...', pb_no_data:'No price data yet',
+    pb_updated:'Updated', pb_fail:'Cannot fetch prices — using saved data',
+    pb_no_asset:'No assets in portfolio',
+    // sectors (keep English)
+    sec_foundation:'🏛️ Foundation', sec_pillar:'⚙️ Pillar',
+    sec_leader:'🚀 Leaders', sec_raw:'🪨 Raw Materials', sec_other:'📦 Other',
+    // pin
+    pin_enter:'Enter PIN to continue', pin_forgot:'Forgot PIN? Reset (clears all data)',
+    pin_wrong:'Wrong PIN', pin_tries_left:'tries left',
+    pin_wait:'⏳ Try again in', pin_wait_sec:'seconds',
+    pin_setup_new:'🔐 Set New PIN', pin_change:'🔐 Change PIN',
+    pin_confirm:'✅ Confirm PIN',
+    pin_digit_label:'digit', pin_not_match:'PINs do not match. Try again.',
+    pin_cancel:'Cancel', pin_select:'Choose PIN',
+    pin_settings_on:'Active', pin_settings_off:'Off',
+    pin_info:'🔐 PIN Lock', pin_lock_after:'Auto-locks after', pin_lock_min:'5 min inactivity',
+    pin_change_btn:'✏️ Change PIN', pin_disable:'🔓 Disable PIN', pin_enable:'🔐 Enable PIN Lock',
+    pin_protect_desc:'Protect your data when others pick up your device',
+    pin_success:'PIN set successfully 🔐', pin_disabled:'PIN lock disabled',
+    pin_confirm_disable:'Disable PIN lock?',
+    pin_confirm_reset:'⚠️ Resetting PIN will clear ALL app data. Confirm?',
+  }
+};
+
+function T(key){ return TRANSLATIONS[_lang]?.[key] || TRANSLATIONS.th[key] || key; }
+
+function toggleLang(){
+  _lang = _lang==='th' ? 'en' : 'th';
+  localStorage.setItem('wo_lang', _lang);
+  document.getElementById('lang-btn').textContent = _lang==='th' ? 'EN' : 'ไทย';
+  // re-render current page + nav
+  applyLangToNav();
+  const cur = document.querySelector('.nb.active')?.dataset.p;
+  if(renders[cur]) renders[cur]();
+  // update stxt
+  document.getElementById('stxt').textContent = T('pb_loading');
+}
+
+function applyLangToNav(){
+  const btn = document.getElementById('lang-btn');
+  if(btn) btn.textContent = _lang==='th' ? 'EN' : 'ไทย';
+  document.querySelectorAll('.nb').forEach(b=>{
+    const p = b.dataset.p;
+    if(p){
+      const map = {dash:T('nav_dash'),invest:T('nav_invest'),rebal:T('nav_rebal'),
+                   budget:T('nav_budget'),reserve:T('nav_reserve'),forex:T('nav_forex')};
+      const lbl=b.querySelector('.nb-lbl'); if(lbl) lbl.textContent=map[p]||p;
+    }
+  });
+}
+
+
+/* ══ KNOWN ASSETS ════════════════════════════════════════════════════ */
+const BLUEPRINT = [
+  // 🏛️ ฐานของพอร์ต 46% — กระดูกสันหลังที่มั่นคง + กระจาย EM
+  {sym:'IVV',   name:'iShares Core S&P 500 ETF',    cat:'FOUNDATION', tgt:35},
+  {sym:'BRK.B', name:'Berkshire Hathaway B',         cat:'FOUNDATION', tgt:5},
+  {sym:'INDA',  name:'iShares MSCI India ETF',       cat:'FOUNDATION', tgt:6},
+  // ⚙️ เสาหลัก 25% — moat ชัดเจน 3 บริษัท
+  {sym:'GOOGL', name:'Alphabet Inc.',                cat:'PILLAR',     tgt:10},
+  {sym:'ASML',  name:'ASML Holding NV',              cat:'PILLAR',     tgt:8},
+  {sym:'TSM',   name:'Taiwan Semiconductor',         cat:'PILLAR',     tgt:7},
+  // 🚀 ผู้นำ 19% — high-conviction growth
+  {sym:'NVDA',  name:'NVIDIA Corporation',           cat:'LEADER',     tgt:6},
+  {sym:'ISRG',  name:'Intuitive Surgical',           cat:'LEADER',     tgt:6},
+  {sym:'CRWD',  name:'CrowdStrike Holdings',         cat:'LEADER',     tgt:5},
+  {sym:'IONQ',  name:'IonQ Inc.',                    cat:'LEADER',     tgt:2},
+  // 🪨 วัตถุดิบต้นน้ำ 10% — hedge เงินเฟ้อ (GLD แทน Barrick)
+  {sym:'CPER',  name:'US Copper Index Fund',         cat:'RAW',        tgt:4},
+  {sym:'SLV',   name:'iShares Silver Trust',         cat:'RAW',        tgt:4},
+  {sym:'GLD',   name:'SPDR Gold Shares ETF',         cat:'RAW',        tgt:2},
+  // อื่นๆ (ถือไว้ได้ แต่ไม่ rebalance)
+  {sym:'VNM',   name:'VanEck Vietnam ETF',           cat:'OTHER',      tgt:0},
+  {sym:'GOLD',  name:'Barrick Gold Corp',            cat:'OTHER',      tgt:0}, // แทนที่ด้วย GLD แล้ว
+  {sym:'DNA',   name:'Ginkgo Bioworks',              cat:'OTHER',      tgt:0},
+  {sym:'ENPH',  name:'Enphase Energy',               cat:'OTHER',      tgt:0},
+  {sym:'AAPL',  name:'Apple Inc.',                   cat:'OTHER',      tgt:0},
+  {sym:'MSFT',  name:'Microsoft Corp.',              cat:'OTHER',      tgt:0},
+  {sym:'AMZN',  name:'Amazon.com Inc.',              cat:'OTHER',      tgt:0},
+  {sym:'META',  name:'Meta Platforms',               cat:'OTHER',      tgt:0},
+  {sym:'AMD',   name:'Advanced Micro Devices',       cat:'OTHER',      tgt:0},
+  {sym:'QQQ',   name:'Invesco QQQ Trust',            cat:'OTHER',      tgt:0},
+  {sym:'SPY',   name:'SPDR S&P 500 ETF',             cat:'OTHER',      tgt:0},
+  {sym:'BTC',   name:'Bitcoin',                      cat:'OTHER',      tgt:0},
+  {sym:'ETH',   name:'Ethereum',                     cat:'OTHER',      tgt:0},
+];
+const KNOWN = Object.fromEntries(BLUEPRINT.map(b=>[b.sym,b]));
+const sdl = document.getElementById('sdl');
+BLUEPRINT.forEach(b=>{const o=document.createElement('option');o.value=b.sym;o.label=b.name;sdl.appendChild(o);});
+
+// ลำดับแสดงผลตาม blueprint
+const SEC_ORDER = ['FOUNDATION','PILLAR','LEADER','RAW','OTHER'];
+
+// Map ค่าหมวดเก่า → หมวดใหม่ (เพื่อ backward-compat กับข้อมูลที่บันทึกก่อนการอัปเดต)
+const CAT_MIGRATE = {
+  BASE:'FOUNDATION', BRAIN:'PILLAR', SEMI:'PILLAR',
+  CYBER:'LEADER', ENERGY:'LEADER', MATERIAL:'RAW',
+};
+// สินทรัพย์ที่ถูกตัดออกจาก blueprint — ย้ายไป OTHER อัตโนมัติ
+const RETIRED_SYMS = {'DNA': true, 'VNM': true, 'GOLD': true};
+function normCat(c){ return (SEC[c] ? c : CAT_MIGRATE[c] || 'OTHER'); }
+const _SEC_BASE = {
+  FOUNDATION:{color:'#7ec8e3', pct:46, tkey:'sec_foundation'},
+  PILLAR:    {color:'#4b96ff', pct:25, tkey:'sec_pillar'},
+  LEADER:    {color:'#b87dff', pct:19, tkey:'sec_leader'},
+  RAW:       {color:'#ff8c42', pct:10, tkey:'sec_raw'},
+  OTHER:     {color:'#8890aa', pct:0,  tkey:'sec_other'},
+};
+// SEC is a proxy that always returns translated labels
+const SEC = new Proxy(_SEC_BASE, {
+  get(t,k){ const v=t[k]; return v?{...v, label:T(v.tkey)}:undefined; }
+});
+
+/* ══ STATE ════════════════════════════════════════════════════════════ */
+const KEY = 'wo_v5';
+let DB = {
+  investments:[], reserve:[], fxPorts:[], fxWithdrawals:[], rebalHistory:[],
+  usdthb:35.0,
+  budgetCats:[
+    {id:'b1',name:'อาหาร',         icon:'🍽️', monthly:0},
+    {id:'b2',name:'ที่พัก/ค่าน้ำ/ไฟ', icon:'🏠', monthly:0},
+    {id:'b3',name:'เดินทาง',        icon:'🚗', monthly:0},
+    {id:'b4',name:'สุขภาพ',         icon:'💊', monthly:0},
+    {id:'b5',name:'ช็อปปิ้ง',        icon:'🛍️', monthly:0},
+    {id:'b6',name:'บันเทิง',         icon:'🎮', monthly:0},
+    {id:'b7',name:'การศึกษา',        icon:'📚', monthly:0},
+    {id:'b8',name:'ดูแลตัวเอง',      icon:'💆', monthly:0},
+    {id:'b9',name:'ออมเงิน/ลงทุน',   icon:'💎', monthly:0},
+    {id:'b10',name:'อื่นๆ',          icon:'📦', monthly:0},
+  ],
+  budgetIncome:[
+    {id:'i1',name:'เงินเดือน',   icon:'💼', monthly:0},
+    {id:'i2',name:'รายได้เสริม', icon:'⚡', monthly:0},
+    {id:'i3',name:'กำไร FX',     icon:'🤖', monthly:0},
+    {id:'i4',name:'ปันผล',       icon:'📈', monthly:0},
+  ],
+  budgetEntries:[], // {id,month,type,catId,catName,icon,amount,note}
+};
+let LIVE = {};
+let editId=null;
+let _priceMode='auto', _priceHistory=[];
+let pieChart=null, growthChart=null;
+
+function loadDB(){
+  try{const r=localStorage.getItem(KEY);if(r)DB={...DB,...JSON.parse(r)};}catch(e){}
+  // migrate หมวดหมู่เก่า → ใหม่ และบันทึกทับ
+  let migrated=false;
+  DB.investments.forEach(i=>{
+    const nc=CAT_MIGRATE[i.cat];
+    if(nc){i.cat=nc;migrated=true;}
+    // ตัดออกจาก blueprint → ย้ายไป OTHER, เคลียร์ tgt
+    if(RETIRED_SYMS[i.sym]){i.cat='OTHER';i.tgt=0;migrated=true;}
+  });
+  if(migrated) saveDB();
+}
+function saveDB(){DB.savedAt=new Date().toISOString();try{localStorage.setItem(KEY,JSON.stringify(DB));}catch(e){}}
+
+/* ══ UTILS ════════════════════════════════════════════════════════════ */
+const fN=(n,d=2)=>new Intl.NumberFormat('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d}).format(n);
+const fB=n=>`฿${fN(n)}`;
+const fU=n=>`$${fN(n)}`;
+const fP=n=>`${n>=0?'+':''}${fN(n)}%`;
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+const today=()=>new Date().toISOString().split('T')[0];
+
+function toast(msg,ok=true){
+  const e=document.getElementById('toast');
+  e.textContent=(ok?'✅ ':'⚠️ ')+msg;
+  e.classList.add('show');
+  setTimeout(()=>e.classList.remove('show'),2400);
+}
+
+/* ══ LIVE PRICES ══════════════════════════════════════════════════════ */
+async function fetchPrices(){
+  const syms=[...new Set([...DB.investments.map(i=>i.sym),'USDTHB=X'])].filter(Boolean);
+  if(!syms.length){setS(false,'ยังไม่มีสินทรัพย์ในพอร์ต');return;}
+  setS(true,'กำลังดึงราคาสด...');
+  const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(',')}&fields=regularMarketPrice,regularMarketChangePercent`;
+  try{
+    const res=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(10000)});
+    const json=await res.json();
+    (json?.quoteResponse?.result||[]).forEach(q=>{
+      LIVE[q.symbol]={price:q.regularMarketPrice,chg:q.regularMarketChangePercent||0};
+      if(q.symbol==='USDTHB=X'&&q.regularMarketPrice) DB.usdthb=q.regularMarketPrice;
+    });
+    DB.investments.forEach(i=>{if(LIVE[i.sym]?.price) i.curPrice=LIVE[i.sym].price;});
+    saveDB();
+    setS(false,`${T('pb_updated')} ${new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})} · USD/THB ${fN(DB.usdthb,2)}`);
+    renderPriceBar();
+    const cur=document.querySelector('.nb.active')?.dataset.p;
+    if(renders[cur]) renders[cur]();
+  }catch(e){setS(false,'ดึงราคาไม่ได้ — ใช้ราคาที่บันทึกไว้');}
+}
+function setS(loading,txt){
+  document.getElementById('pspin').style.display=loading?'inline-block':'none';
+  document.getElementById('stxt').textContent=txt;
+}
+function renderPriceBar(){
+  const bar=document.getElementById('pbar2');
+  const syms=DB.investments.map(i=>i.sym).filter(s=>LIVE[s]);
+  if(!syms.length){bar.innerHTML='<span style="color:var(--muted);font-size:10px;padding:4px 0">ยังไม่มีข้อมูลราคา</span>';return;}
+  bar.innerHTML=syms.map(s=>{
+    const p=LIVE[s],up=(p.chg||0)>=0;
+    return `<div class="pchip ${up?'up':'dn'}"><span class="ps">${s}</span><span class="pp">${fU(p.price)}</span><span class="pc">${fP(p.chg)}</span></div>`;
+  }).join('');
+}
+
+/* ══ NAVIGATION ══════════════════════════════════════════════════════ */
+let _invTab='port'; // 'port' | 'price'
+function getPM(){return{
+  dash:   {title:T('title_dash'),   btn:''},
+  invest: {title:T('title_invest'), btn:`<button class="btn btn-b btn-sm" id="inv-top-btn" onclick="invTopBtn()">${T('btn_add')}</button>`},
+  rebal:  {title:T('title_rebal'),  btn:''},
+  budget: {title:T('title_budget'), btn:`<button class="btn btn-g btn-sm" onclick="openAddEntry()">${T('bg_add')}</button>`},
+  reserve:{title:T('title_reserve'),btn:`<button class="btn btn-g btn-sm" onclick="om('m-res','new')">${T('btn_add_record')}</button>`},
+  forex:  {title:T('title_forex'),  btn:`<button class="btn btn-b btn-sm" onclick="openFxMenu()">${T('btn_add')}</button>`},
+};}
+const PM = new Proxy({}, {get(_,k){ return getPM()[k]; }});
+function invTopBtn(){
+  if(_invTab==='port') om('m-inv','new');
+  else document.getElementById('m-addpx')?.classList.add('open');
+}
+const renders={dash:rDash,invest:rInvest,rebal:rRebal,budget:rBudget,reserve:rRes,forex:rFx};
+function go(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  document.querySelector(`[data-p="${id}"]`).classList.add('active');
+  document.getElementById('tt').textContent=PM[id].title;
+  document.getElementById('ta').innerHTML=PM[id].btn;
+  applyLangToNav();
+  renders[id]?.();
+}
+function switchInvTab(tab){
+  _invTab=tab;
+  const btn=document.getElementById('inv-top-btn');
+  if(btn) btn.textContent=tab==='port'?'+ เพิ่ม':'+ สินทรัพย์';
+  rInvest();
+}
+
+/* ══ CALC ════════════════════════════════════════════════════════════ */
+function calcInv(){
+  const fx=DB.usdthb||35;
+  let curVal=0,cost=0;
+  DB.investments.forEach(i=>{
+    curVal+=(i.qty*(i.curPrice||i.buyPrice))*fx;
+    cost+=(i.totalBaht||(i.qty*i.buyPrice*fx));
+  });
+  return{curVal,cost,pnl:curVal-cost,pnlP:cost>0?((curVal-cost)/cost)*100:0,count:DB.investments.length};
+}
+function calcRes(){
+  const inc=DB.reserve.filter(x=>x.type==='income').reduce((s,x)=>s+x.amount,0);
+  const exp=DB.reserve.filter(x=>x.type==='expense').reduce((s,x)=>s+x.amount,0);
+  return{bal:inc-exp,inc,exp};
+}
+function calcFx(){
+  const totalBal=DB.fxPorts.reduce((s,p)=>s+p.balance,0);
+  const totalWith=DB.fxWithdrawals.reduce((s,w)=>s+w.amount,0);
+  return{totalBal,totalWith,ports:DB.fxPorts.length};
+}
+
+/* ══ GROWTH CHART DATA ═══════════════════════════════════════════════
+   สร้างข้อมูลรายเดือนย้อนหลัง 12 เดือน จากข้อมูลจริงในระบบ
+   - พอร์ตลงทุน: สะสม totalBaht ของแต่ละ investment ตาม date
+   - เงินสำรอง: สะสม reserve transactions รายเดือน
+   - FX Bot: สะสม withdrawals รายเดือน
+════════════════════════════════════════════════════════════════════ */
+function buildGrowthData(){
+  // สร้าง 12 เดือนย้อนหลัง
+  const months = [];
+  const now = new Date();
+  for(let i=11; i>=0; i--){
+    const d = new Date(now.getFullYear(), now.getMonth()-i, 1);
+    months.push(d.toISOString().slice(0,7)); // "YYYY-MM"
+  }
+
+  // ── พอร์ตลงทุน: ใช้มูลค่าปัจจุบัน + สะสมจากวันที่ซื้อ ──
+  // แต่ละเดือน = มูลค่าของสินทรัพย์ที่ซื้อไปแล้ว ณ เดือนนั้น (ใช้ราคาปัจจุบันเป็น proxy)
+  const invByMonth = months.map(m => {
+    const bought = DB.investments.filter(i => i.date && i.date.slice(0,7) <= m);
+    return bought.reduce((s,i) => s + (i.totalBaht||(i.qty*i.buyPrice*(DB.usdthb||35))), 0);
+  });
+
+  // ── เงินสำรอง: สะสมยอดคงเหลือถึงแต่ละเดือน ──
+  const resByMonth = months.map(m => {
+    return DB.reserve
+      .filter(t => t.date && t.date.slice(0,7) <= m)
+      .reduce((s,t) => s+t.amount, 0);
+  });
+
+  // ── FX Bot: สะสมการถอนกำไรถึงแต่ละเดือน ──
+  const fxByMonth = months.map(m => {
+    return DB.fxWithdrawals
+      .filter(w => w.date && w.date.slice(0,7) <= m)
+      .reduce((s,w) => s+w.amount, 0);
+  });
+
+  // labels แสดงเป็นเดือนภาษาไทย
+  const labels = months.map(m => {
+    const [y,mo] = m.split('-');
+    const thMonth = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+    return `${thMonth[parseInt(mo)]}${(parseInt(y)+543).toString().slice(2)}`;
+  });
+
+  return { labels, invByMonth, resByMonth, fxByMonth };
+}
+
+/* ══ DASHBOARD ═══════════════════════════════════════════════════════ */
+function rDash(){
+  const inv=calcInv(),res=calcRes(),fx=calcFx();
+  // ทรัพย์สินสุทธิ = พอร์ตลงทุน + เงินสำรอง + FX ที่ยังอยู่ในบอท
+  // FX ที่ถอนไปแล้ว: ถ้าไปเงินสำรอง → อยู่ใน res.bal แล้ว, ถ้าไปลงทุน → อยู่ใน inv.curVal แล้ว
+  // dest='none' = ถอนออกไปแต่ไม่ได้บันทึกปลายทาง → นับแยก
+  const fxUntracked = DB.fxWithdrawals.filter(w=>w.dest==='none'||!w.dest).reduce((s,w)=>s+w.amount,0);
+  const grand = inv.curVal + res.bal + fx.totalBal + fxUntracked;
+  const secV={};
+  DB.investments.forEach(i=>{
+    const v=i.qty*(i.curPrice||i.buyPrice)*DB.usdthb;
+    secV[i.cat]=(secV[i.cat]||0)+v;
+  });
+  const totalInvV=Object.values(secV).reduce((s,v)=>s+v,0)||1;
+  const pg=document.getElementById('pg-dash');
+  pg.innerHTML=`
+  <div class="kg c1">
+    <div class="kpi g" style="background:linear-gradient(135deg,rgba(0,223,160,.1),rgba(75,150,255,.06));border-color:rgba(0,223,160,.15)">
+      <div class="kico">💎</div><div class="kl">${T('d_networth')}</div>
+      <div class="kv g" style="font-size:22px">${fB(grand)}</div>
+      <div class="ks">USD/THB ${fN(DB.usdthb,2)} · ${DB.savedAt?new Date(DB.savedAt).toLocaleDateString('th-TH'):'—'}</div>
+    </div>
+  </div>
+  <div class="kg">
+    <div class="kpi b"><div class="kico">📈</div><div class="kl">${T('d_portfolio')}</div><div class="kv b">${fB(inv.curVal)}</div><div class="ks ${inv.pnl>=0?'pos':'neg'}">${fP(inv.pnlP)}</div></div>
+    <div class="kpi g"><div class="kico">🏦</div><div class="kl">${T('d_reserve')}</div><div class="kv g">${fB(res.bal)}</div><div class="ks">${DB.reserve.length} รายการ</div></div>
+  </div>
+  <div class="kg">
+    <div class="kpi b"><div class="kico">🤖</div><div class="kl">${T('d_fxbot')}</div><div class="kv b">${fB(fx.totalBal)}</div><div class="ks">${fx.ports} พอร์ต</div></div>
+    <div class="kpi y"><div class="kico">💸</div><div class="kl">${T('d_fxwith')}</div><div class="kv y">${fB(fx.totalWith)}</div></div>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <span class="ct">📈 การเติบโตรายเดือน</span>
+      <div style="display:flex;gap:4px">
+        <button class="btn btn-ghost btn-xs active-range" id="rng-6"  onclick="setRange(6)">6ด.</button>
+        <button class="btn btn-ghost btn-xs" id="rng-12" onclick="setRange(12)">12ด.</button>
+      </div>
+    </div>
+    <div class="cb" style="padding-bottom:8px">
+      <div style="position:relative;height:200px"><canvas id="d-growth"></canvas></div>
+      <div style="display:flex;gap:12px;justify-content:center;margin-top:10px;flex-wrap:wrap" id="d-growth-leg"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct">🥧 Sector</span></div>
+    <div class="cb">
+      <div class="cwrap"><canvas id="d-pie"></canvas></div>
+      <div id="d-leg" style="margin-top:10px;display:flex;flex-direction:column;gap:5px"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="ch"><span class="ct">🕐 ธุรกรรมล่าสุด</span><button class="btn btn-ghost btn-xs" onclick="go('reserve')">${T('d_seeall')}</button></div>
+    <div id="d-rec"></div>
+  </div>`;
+
+  const sk=Object.keys(secV).filter(k=>secV[k]>0);
+  if(pieChart) pieChart.destroy();
+  if(sk.length){
+    const ctx=document.getElementById('d-pie').getContext('2d');
+    pieChart=new Chart(ctx,{type:'doughnut',data:{labels:sk.map(k=>SEC[k]?.label||k),datasets:[{data:sk.map(k=>secV[k]),backgroundColor:sk.map(k=>SEC[k]?.color||'#888'),borderColor:'#0b0e1a',borderWidth:2,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${fB(c.raw)} (${fN(c.raw/totalInvV*100)}%)`}}}}});
+    document.getElementById('d-leg').innerHTML=sk.map(k=>`<div style="display:flex;align-items:center;gap:7px"><span style="width:9px;height:9px;border-radius:50%;background:${SEC[k]?.color};flex-shrink:0"></span><span style="color:var(--muted2);flex:1;font-size:11px">${SEC[k]?.label||k}</span><span class="mono" style="color:${SEC[k]?.color};font-size:11px">${fB(secV[k])}</span><span style="color:var(--muted);font-size:10px;min-width:34px;text-align:right">${fN(secV[k]/totalInvV*100)}%</span></div>`).join('');
+  }
+  const rec=[...DB.reserve].sort((a,b)=>b.date.localeCompare(a.date)).slice(0,5);
+  document.getElementById('d-rec').innerHTML=rec.length?rec.map(t=>`<div style="padding:9px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;font-weight:600">${t.desc}</div><div style="font-size:10px;color:var(--muted)">${t.date} · ${t.cat}</div></div><div class="mono ${t.amount>=0?'pos':'neg'}" style="font-size:13px;font-weight:700">${t.amount>=0?'+':''}${fB(t.amount)}</div></div>`).join(''):'<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">ยังไม่มีธุรกรรม</div>';
+
+  // Growth chart
+  renderGrowthChart(DB._chartRange||12);
+}
+
+/* ══ GROWTH CHART RENDER ═════════════════════════════════════════════ */
+function renderGrowthChart(range){
+  const el = document.getElementById('d-growth');
+  if(!el) return;
+  const gd = buildGrowthData();
+  const n = range || 12;
+  const labels = gd.labels.slice(-n);
+  const inv    = gd.invByMonth.slice(-n);
+  const res    = gd.resByMonth.slice(-n);
+  const fx     = gd.fxByMonth.slice(-n);
+
+  // range button highlight
+  ['6','12'].forEach(r => {
+    const b = document.getElementById('rng-'+r);
+    if(b) b.style.color = String(n)===r ? 'var(--g)' : '';
+  });
+
+  if(growthChart) growthChart.destroy();
+  const ctx = el.getContext('2d');
+
+  // gradient fills
+  const gG = ctx.createLinearGradient(0,0,0,200);
+  gG.addColorStop(0,'rgba(75,150,255,0.35)'); gG.addColorStop(1,'rgba(75,150,255,0)');
+  const gR = ctx.createLinearGradient(0,0,0,200);
+  gR.addColorStop(0,'rgba(0,223,160,0.35)'); gR.addColorStop(1,'rgba(0,223,160,0)');
+  const gFx = ctx.createLinearGradient(0,0,0,200);
+  gFx.addColorStop(0,'rgba(240,183,48,0.35)'); gFx.addColorStop(1,'rgba(240,183,48,0)');
+
+  const hasAnyData = [...inv,...res,...fx].some(v=>v>0);
+
+  growthChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'พอร์ตลงทุน',
+          data: inv,
+          borderColor: '#4b96ff', backgroundColor: gG,
+          borderWidth: 2, fill: true, tension: 0.4,
+          pointRadius: 3, pointBackgroundColor: '#4b96ff',
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'เงินสำรอง',
+          data: res,
+          borderColor: '#00dfa0', backgroundColor: gR,
+          borderWidth: 2, fill: true, tension: 0.4,
+          pointRadius: 3, pointBackgroundColor: '#00dfa0',
+          pointHoverRadius: 5,
+        },
+        {
+          label: 'FX ถอนสะสม',
+          data: fx,
+          borderColor: '#f0b730', backgroundColor: gFx,
+          borderWidth: 2, fill: true, tension: 0.4,
+          pointRadius: 3, pointBackgroundColor: '#f0b730',
+          pointHoverRadius: 5,
+        },
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: 'rgba(17,20,34,0.95)',
+          borderColor: 'rgba(255,255,255,0.1)', borderWidth: 1,
+          titleColor: '#dde3f8', bodyColor: '#7c85aa',
+          padding: 10, cornerRadius: 8,
+          callbacks: { label: c => ` ${c.dataset.label}: ${fB(c.raw)}` }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: { color: '#515878', font: { size: 10 }, maxRotation: 0 }
+        },
+        y: {
+          grid: { color: 'rgba(255,255,255,0.04)' },
+          ticks: {
+            color: '#515878', font: { size: 10 },
+            callback: v => v >= 1000000 ? `${fN(v/1000000,1)}M` : v >= 1000 ? `${fN(v/1000,0)}k` : fN(v,0)
+          }
+        }
+      }
+    }
+  });
+
+  // legend
+  const legItems = [
+    {label:T('d_port_label'), color:'#4b96ff'},
+    {label:T('d_reserve_label'),   color:'#00dfa0'},
+    {label:T('d_fxacc_label'), color:'#f0b730'},
+  ];
+  const legEl = document.getElementById('d-growth-leg');
+  if(legEl){
+    legEl.innerHTML = legItems.map(l=>`
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--muted2)">
+        <span style="width:20px;height:3px;background:${l.color};border-radius:2px;display:inline-block"></span>
+        ${l.label}
+      </div>`).join('');
+  }
+
+  if(!hasAnyData){
+    ctx.save();
+    ctx.fillStyle = '#515878';
+    ctx.font = '12px Outfit, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('เพิ่มข้อมูลการลงทุน เงินสำรอง หรือการถอน FOREX เพื่อดูกราฟ', el.width/2, 90);
+    ctx.restore();
+  }
+}
+
+function setRange(n){
+  DB._chartRange = n;
+  renderGrowthChart(n);
+}
+
+/* ══ INVEST PAGE ═════════════════════════════════════════════════════ */
+function rInvest(){
+  const pg=document.getElementById('pg-invest');
+  const tabsHtml=`<div class="itabs">
+    <button class="itab ${_invTab==='port'?'active':''}" onclick="switchInvTab('port')">📈 พอร์ต</button>
+    <button class="itab ${_invTab==='price'?'active':''}" onclick="switchInvTab('price')">💹 ราคาปัจจุบัน</button>
+  </div>`;
+  if(_invTab==='price'){ pg.innerHTML=tabsHtml+rPricePanel(); bindPriceRows(); return; }
+
+  // ── PORT TAB ──
+  const inv=calcInv();
+  const byCat={};
+  DB.investments.forEach(i=>{ const c=normCat(i.cat); (byCat[c]||(byCat[c]=[])).push({...i,cat:c}); });
+  pg.innerHTML=tabsHtml+`
+  <div class="kg">
+    <div class="kpi b"><div class="kico">💼</div><div class="kl">${T('inv_curval')}</div><div class="kv b">${fB(inv.curVal)}</div></div>
+    <div class="kpi ${inv.pnl>=0?'g':'r'}"><div class="kico">${inv.pnl>=0?'📈':'📉'}</div><div class="kl">P&L</div><div class="kv ${inv.pnl>=0?'g':'r'}">${fB(inv.pnl)}</div><div class="ks">${fP(inv.pnlP)}</div></div>
+  </div>
+  <div class="kg c3" style="margin-bottom:13px">
+    <div class="kpi b"><div class="kl">${T('inv_cost')}</div><div class="kv b" style="font-size:13px">${fB(inv.cost)}</div></div>
+    <div class="kpi b"><div class="kl">${T('inv_count')}</div><div class="kv b" style="font-size:18px">${inv.count}</div></div>
+    <div class="kpi b"><div class="kl">$/฿</div><div class="kv b" style="font-size:14px">${fN(DB.usdthb,2)}</div></div>
+  </div>
+  ${SEC_ORDER.filter(cat=>byCat[cat]?.length).map(cat=>{
+    const assets=byCat[cat];
+    const secV=assets.reduce((s,i)=>s+i.qty*(i.curPrice||i.buyPrice)*DB.usdthb,0);
+    const portPctSec=inv.curVal>0?secV/inv.curVal*100:0;
+    return`<div class="card" style="border-color:${SEC[cat].color}22">
+      <div class="ch" style="border-color:${SEC[cat].color}22">
+        <span class="ct" style="color:${SEC[cat].color}">${SEC[cat].label}${SEC[cat].pct?`<span style="font-size:9px;color:var(--muted);font-weight:400;margin-left:5px">เป้า ${SEC[cat].pct}%</span>`:''}
+        </span>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span class="mono" style="font-size:11px;color:${portPctSec>0?(Math.abs(portPctSec-(SEC[cat].pct||0))<2?'var(--g)':'var(--y)'):'var(--muted)'}">${fN(portPctSec)}%</span>
+          <span class="tag tm">${assets.length} ตัว</span>
+        </div>
+      </div>
+      ${assets.map(i=>{
+        const fx=DB.usdthb||35,cp=i.curPrice||i.buyPrice;
+        const curV=i.qty*cp*fx,costV=i.totalBaht||(i.qty*i.buyPrice*fx);
+        const pnl=curV-costV,pnlP=costV>0?(pnl/costV)*100:0;
+        const portP=inv.curVal>0?curV/inv.curVal*100:0;
+        const lp=LIVE[i.sym];
+        return`<div class="asset" style="margin:8px;border-left:3px solid ${SEC[cat].color}">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div class="asy" style="color:${SEC[cat].color}">${i.sym}${lp?`<span style="font-size:9px;color:var(--muted2);margin-left:4px">${(lp.chg||0)>=0?'▲':'▽'}${fN(Math.abs(lp.chg||0))}%</span>`:''}</div>
+              <div class="aname">${i.name}</div>
+            </div>
+            <div style="display:flex;gap:3px">
+              <button class="btn btn-ghost btico" onclick="switchInvTab('price')" title="แก้ราคา">💹</button>
+              <button class="btn btn-ghost btico" onclick="om('m-inv','edit','${i.id}')">✏️</button>
+              <button class="btn btn-ghost btico" onclick="doDelete('investments','${i.id}')">🗑️</button>
+            </div>
+          </div>
+          <div class="arow">
+            <div class="acell"><div class="acl">${T('inv_units')}</div><div class="acv">${fN(i.qty,i.qty<1?4:2)}</div></div>
+            <div class="acell"><div class="acl">${T('inv_buy_price')}</div><div class="acv">${fU(i.buyPrice)}</div></div>
+            <div class="acell"><div class="acl">${T('inv_cur_price')}</div><div class="acv" style="color:var(--b)">${fU(cp)}</div></div>
+          </div>
+          <div class="div"></div>
+          <div class="arow">
+            <div class="acell"><div class="acl">${T('inv_invested')}</div><div class="acv">${fB(costV)}</div></div>
+            <div class="acell"><div class="acl">${T('inv_cur_val')}</div><div class="acv" style="color:var(--b)">${fB(curV)}</div></div>
+            <div class="acell" style="text-align:right"><div class="acl">P&L</div><div class="acv ${pnl>=0?'pos':'neg'}">${pnl>=0?'+':''}${fB(pnl)}</div><div style="font-size:10px;font-weight:700" class="${pnl>=0?'pos':'neg'}">${fP(pnlP)}</div></div>
+          </div>
+          <div style="margin-top:7px">
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:2px">
+              <span>${T('inv_port_pct')}: <b style="color:${SEC[cat].color}">${fN(portP)}%</b></span>
+              ${i.tgt?`<span>เป้า: <b>${fN(i.tgt)}%</b> ${Math.abs(portP-i.tgt)<1?'✅':portP<i.tgt?'⬇️ซื้อเพิ่ม':'⬆️มากเกิน'}</span>`:''}
+            </div>
+            <div class="pbar-w"><div class="pbar" style="width:${Math.min(100,portP)}%;background:${SEC[cat].color}"></div></div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('')}
+  ${!DB.investments.length?`<div style="text-align:center;padding:50px 20px;color:var(--muted)"><div style="font-size:38px;margin-bottom:10px">📈</div><p style="font-size:13px">${T('inv_no_asset')}<br>${T('inv_no_asset_sub')}</p></div>`:''}`;
+}
+
+/* ══ PRICE PANEL ═════════════════════════════════════════════════════ */
+function rPricePanel(){
+  if(!DB.investments.length) return`
+    <div style="text-align:center;padding:50px 20px;color:var(--muted)">
+      <div style="font-size:38px;margin-bottom:10px">💹</div>
+      <p style="font-size:13px">ยังไม่มีสินทรัพย์<br>กด "+ สินทรัพย์" เพื่อเริ่มต้น</p>
+    </div>`;
+  const updAt=DB._pxUpdated?`อัปเดต ${new Date(DB._pxUpdated).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`:LIVE&&Object.keys(LIVE).length?'มีราคาจาก API':'ยังไม่ได้ดึง';
+  const rows=DB.investments.map(i=>{
+    const cat=SEC[i.cat]||SEC.OTHER;
+    const lp=LIVE[i.sym];
+    const chg=lp?.chg||0;
+    const chgHtml=lp?`<span class="pxchg ${chg>=0?'pos':'neg'}">${fP(chg)}</span>`:`<span class="pxchg" style="color:var(--muted)">—</span>`;
+    return`<div class="pxrow" data-id="${i.id}">
+      <div style="min-width:52px">
+        <div class="pxsym" style="color:${cat.color}">${i.sym}</div>
+        <div class="pxname">${i.name}</div>
+      </div>
+      ${chgHtml}
+      <input class="pxinput" type="number" step="any" value="${fN(i.curPrice||i.buyPrice,2).replace(/,/g,'')}"
+        placeholder="0.00" data-id="${i.id}" onchange="saveSinglePx(this)"
+        onfocus="this.select()" style="width:110px;flex:none">
+      <span style="font-size:11px;color:var(--muted2);flex-shrink:0">USD</span>
+      <button class="pxbtn" id="pxb-${i.id}" onclick="fetchOnePx('${i.id}','${i.sym}',this)" title="ดึงราคาจาก Yahoo">📡</button>
+      <button class="pxbtn" onclick="doDelete('investments','${i.id}')" title="ลบสินทรัพย์" style="color:var(--muted)">🗑️</button>
+    </div>`;
+  }).join('');
+  return`
+  <div class="card" style="margin-bottom:11px">
+    <div class="ch">
+      <span class="ct">💹 ราคาปัจจุบัน (USD)</span>
+      <span style="font-size:10px;color:var(--muted2)">${updAt}</span>
+    </div>
+    <div style="padding:8px 14px 6px;display:flex;gap:7px">
+      <button class="btn btn-b btn-sm btn-full" id="fetchall-btn" onclick="fetchAllPx()">📡 ดึงราคาทั้งหมด</button>
+    </div>
+    <div>${rows}</div>
+  </div>
+  <div style="font-size:11px;color:var(--muted);text-align:center;padding-bottom:6px">
+    📝 แก้ราคาได้โดยตรง · 📡 ดึงจาก Yahoo Finance · 🗑️ ลบสินทรัพย์
+  </div>`;
+}
+
+function bindPriceRows(){ /* inputs bind via inline handlers */ }
+
+function saveSinglePx(input){
+  const id=input.dataset.id;
+  const p=parseFloat(input.value);
+  if(isNaN(p)||p<0){input.value='';return;}
+  const i=DB.investments.find(x=>x.id===id);
+  if(i){ i.curPrice=p; DB._pxUpdated=new Date().toISOString(); saveDB(); }
+  input.classList.add('saved');
+  setTimeout(()=>input.classList.remove('saved'),600);
+  rDash();
+}
+
+async function fetchOnePx(id,sym,btn){
+  btn.classList.add('loading');
+  const orig=btn.textContent; btn.textContent='⏳';
+  try{
+    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${sym}&fields=regularMarketPrice,regularMarketChangePercent`;
+    const res=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(9000)});
+    const json=await res.json();
+    const q=json?.quoteResponse?.result?.[0];
+    if(q?.regularMarketPrice){
+      LIVE[sym]={price:q.regularMarketPrice,chg:q.regularMarketChangePercent||0};
+      const i=DB.investments.find(x=>x.id===id);
+      if(i){ i.curPrice=q.regularMarketPrice; DB._pxUpdated=new Date().toISOString(); saveDB(); }
+      // อัปเดต input และ %chg โดยตรง ไม่ต้อง re-render ทั้งหน้า
+      const row=btn.closest('.pxrow');
+      const inp=row.querySelector('.pxinput');
+      if(inp){ inp.value=fN(q.regularMarketPrice,2).replace(/,/g,''); inp.classList.add('saved'); setTimeout(()=>inp.classList.remove('saved'),600); }
+      const chgEl=row.querySelector('.pxchg');
+      if(chgEl){ const c=q.regularMarketChangePercent||0; chgEl.textContent=fP(c); chgEl.className=`pxchg ${c>=0?'pos':'neg'}`; }
+      btn.textContent='✅'; rDash(); renderPriceBar();
+    } else { btn.textContent='⚠️'; }
+  }catch(e){ btn.textContent='⚠️'; }
+  btn.classList.remove('loading');
+  setTimeout(()=>{ btn.textContent=orig; },1800);
+}
+
+async function fetchAllPx(){
+  const btn=document.getElementById('fetchall-btn');
+  if(!DB.investments.length){toast('ไม่มีสินทรัพย์',false);return;}
+  if(btn){ btn.disabled=true; btn.textContent='⏳ กำลังดึง...'; }
+  const syms=[...new Set(DB.investments.map(i=>i.sym).concat(['USDTHB=X']))];
+  try{
+    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${syms.join(',')}&fields=regularMarketPrice,regularMarketChangePercent`;
+    const res=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(12000)});
+    const json=await res.json();
+    (json?.quoteResponse?.result||[]).forEach(q=>{
+      if(q.symbol==='USDTHB=X'&&q.regularMarketPrice) DB.usdthb=q.regularMarketPrice;
+      LIVE[q.symbol]={price:q.regularMarketPrice,chg:q.regularMarketChangePercent||0};
+      const i=DB.investments.find(x=>x.sym===q.symbol);
+      if(i&&q.regularMarketPrice) i.curPrice=q.regularMarketPrice;
+    });
+    DB._pxUpdated=new Date().toISOString();
+    saveDB(); toast('ดึงราคาครบทุกตัวแล้ว ✅'); renderPriceBar();
+    // re-render panel
+    const pg=document.getElementById('pg-invest');
+    const tabs=pg.querySelector('.itabs')?.outerHTML||'';
+    pg.innerHTML=tabs+rPricePanel();
+    rDash();
+  }catch(e){ toast('ดึงราคาไม่ได้',false); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent='📡 ดึงราคาทั้งหมด'; } }
+}
+
+/* ══ REBALANCE ═══════════════════════════════════════════════════════
+   สูตร: (พอร์ตปัจจุบัน + เงินเพิ่ม) × %เป้า − มูลค่าจริง = ต้องซื้อเพิ่ม
+   ผลบวก = ซื้อเพิ่ม | ผลลบ = ถือ/ลดสัดส่วน
+════════════════════════════════════════════════════════════════════ */
+function rRebal(){
+  const inv=calcInv();
+  const pg=document.getElementById('pg-rebal');
+  const totalTgt=DB.investments.reduce((s,i)=>s+(i.tgt||0),0);
+
+  pg.innerHTML=`
+  <!-- formula box -->
+  <div style="background:rgba(240,183,48,.07);border:1px solid rgba(240,183,48,.2);border-radius:12px;padding:12px 14px;margin-bottom:12px;font-size:11px;color:var(--muted2);line-height:1.9">
+    <div style="font-weight:700;color:var(--y);margin-bottom:4px">⚖️ วิธีคำนวณ Rebalance</div>
+    <b style="color:var(--text)">ยอดเป้า</b> = (พอร์ตปัจจุบัน + เงินที่จะเพิ่ม) × <i>% เป้าหมาย</i><br>
+    <b style="color:var(--g)">ต้องซื้อเพิ่ม</b> = ยอดเป้า − มูลค่าที่มีอยู่จริง<br>
+    <span style="color:var(--muted)">ผลรวมที่ซื้อแต่ละตัวจะ = เงินที่เพิ่มพอดี ✓</span>
+  </div>
+
+  <!-- input -->
+  <div class="card" style="border-color:rgba(240,183,48,.2)">
+    <div class="ch"><span class="ct" style="color:var(--y)">กรอกเงินที่จะลงทุนเดือนนี้</span></div>
+    <div class="cb">
+      <div class="fg">
+        <label class="fl">พอร์ตปัจจุบัน (฿) — คำนวณจากข้อมูลจริง</label>
+        <input class="fi" type="number" id="rb-port" value="${fN(inv.curVal,2).replace(/,/g,'')}" step="any">
+      </div>
+      <div class="fg">
+        <label class="fl">💰 เงินที่จะเพิ่มเดือนนี้ (฿)</label>
+        <input class="fi" type="number" id="rb-add" placeholder="20,000" step="any" oninput="previewRebal()">
+      </div>
+      <div id="rb-preview" style="background:var(--bg3);border-radius:8px;padding:10px 12px;font-size:11px;color:var(--muted2);margin-bottom:12px;display:none">
+        พอร์ตหลังเพิ่ม: <b id="rb-new-total" style="color:var(--b)">—</b>
+      </div>
+      <button class="btn btn-y btn-full" onclick="runRebal()">⚖️ คำนวณ Rebalance</button>
+    </div>
+  </div>
+
+  <div id="reb-out"></div>
+  <div id="reb-hist-wrap"></div>
+
+  <!-- target editor -->
+  <div class="card">
+    <div class="ch">
+      <span class="ct">🎯 % เป้าหมายแต่ละสินทรัพย์</span>
+      <span id="tgt-total" class="tag ${Math.abs(totalTgt-100)<0.1?'tg':totalTgt>100?'tr':'ty'}">${fN(totalTgt,1)}%</span>
+    </div>
+    <div class="cb" style="padding:8px 14px">
+      ${!DB.investments.length?'<p style="color:var(--muted);font-size:12px">ยังไม่มีสินทรัพย์</p>':
+        DB.investments.map(i=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border)">
+            <div>
+              <span class="mono" style="color:${SEC[i.cat]?.color||'#888'};font-weight:700;font-size:13px">${i.sym}</span>
+              <span style="font-size:10px;color:var(--muted);margin-left:5px">${i.name?.slice(0,18)||''}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:5px">
+              <input type="number" value="${i.tgt||0}" min="0" max="100" step="0.5"
+                style="width:56px;background:var(--bg3);border:1px solid var(--border2);border-radius:6px;
+                       padding:5px 7px;color:var(--text);font-family:'Outfit';font-size:13px;text-align:center;outline:none"
+                onchange="updateTgt('${i.id}',this.value)">
+              <span style="font-size:10px;color:var(--muted)">%</span>
+            </div>
+          </div>`).join('')}
+    </div>
+  </div>`;
+  // render history
+  setTimeout(rRebalHistory, 0);
+}
+
+function previewRebal(){
+  const port=parseFloat(document.getElementById('rb-port').value)||0;
+  const add=parseFloat(document.getElementById('rb-add').value)||0;
+  const prev=document.getElementById('rb-preview');
+  if(add>0){
+    prev.style.display='block';
+    document.getElementById('rb-new-total').textContent=fB(port+add);
+  } else {
+    prev.style.display='none';
+  }
+}
+
+function runRebal(){
+  const portVal=parseFloat(document.getElementById('rb-port').value)||0;
+  const addMoney=parseFloat(document.getElementById('rb-add').value)||0;
+  const newTotal=portVal+addMoney;
+  const fx=DB.usdthb||35;
+
+  if(addMoney<=0){toast('กรุณากรอกเงินที่จะเพิ่ม',false);return;}
+
+  // For each asset: realVal = current market value in THB
+  // targetVal = newTotal × (target%)
+  // toBuy = targetVal - realVal
+  // Sum of all toBuy = addMoney (if targets sum to 100%)
+  const rows=DB.investments
+    .filter(i=>(i.tgt||0)>0)
+    .map(i=>{
+      const realVal=i.qty*(i.curPrice||i.buyPrice)*fx;
+      const targetVal=newTotal*(i.tgt/100);
+      const toBuy=targetVal-realVal;                // positive=buy more, negative=overweight
+      const sharesNeeded=toBuy>0?toBuy/((i.curPrice||i.buyPrice)*fx):0;
+      return{...i,realVal,targetVal,toBuy,sharesNeeded};
+    })
+    .sort((a,b)=>b.toBuy-a.toBuy);
+
+  const tgtSum=DB.investments.reduce((s,i)=>s+(i.tgt||0),0);
+  const sumToBuy=rows.reduce((s,r)=>s+(r.toBuy>0?r.toBuy:0),0);
+
+  document.getElementById('reb-out').innerHTML=`
+  <div class="card" style="border-color:rgba(0,223,160,.15)">
+    <div class="ch">
+      <span class="ct" style="color:var(--g)">📊 ผลการคำนวณ</span>
+      <span class="tag ${Math.abs(tgtSum-100)<0.1?'tg':'tr'}">${fN(tgtSum,1)}% target</span>
+    </div>
+    <div style="padding:8px 14px;background:rgba(75,150,255,.06);border-bottom:1px solid var(--border);font-size:11px;color:var(--muted2)">
+      พอร์ตก่อนเพิ่ม <b style="color:var(--b)">${fB(portVal)}</b>
+      + เงินที่เพิ่ม <b style="color:var(--g)">${fB(addMoney)}</b>
+      = <b style="color:var(--y)">${fB(newTotal)}</b>
+      · อัตรา ${fN(fx,2)} ฿/$
+    </div>
+    ${Math.abs(tgtSum-100)>0.5?`<div style="background:rgba(255,79,106,.1);border-bottom:1px solid var(--border);padding:8px 14px;font-size:11px;color:var(--r)">⚠️ % เป้ารวมกัน ${fN(tgtSum,1)}% — ควรรวมเป็น 100% เพื่อความแม่นยำ</div>`:''}
+    <div style="padding:8px 10px">
+      ${rows.map(r=>{
+        const isBuy=r.toBuy>50;
+        const isOver=r.toBuy<-50;
+        const col=isBuy?'var(--g)':isOver?'var(--r)':'var(--muted)';
+        return`<div class="reb" style="border-left:3px solid ${col}">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <span class="mono" style="color:${SEC[r.cat]?.color||'#888'};font-weight:700">${r.sym}</span>
+              <span style="font-size:10px;color:var(--muted);margin-left:5px">${r.name?.slice(0,16)||''}</span>
+            </div>
+            <span class="tag ${isBuy?'tg':isOver?'tr':'tm'}">${fN(r.tgt)}% เป้า</span>
+          </div>
+
+          <!-- สิ่งที่ต้องทำ -->
+          <div style="margin-top:6px;font-size:13px;font-weight:700;color:${col}">
+            ${isBuy?`🟢 ซื้อเพิ่ม ${fB(r.toBuy)}`:isOver?`🔴 มากกว่าเป้า ${fB(Math.abs(r.toBuy))} (ถือไว้)`:
+              `⚪ ถือไว้ (ห่างเป้าน้อยมาก)`}
+          </div>
+
+          ${isBuy?`<div style="font-size:10px;color:var(--muted2);margin-top:3px">≈ ${fN(r.sharesNeeded,r.sharesNeeded<0.01?6:3)} หน่วย × ${fU(r.curPrice||r.buyPrice)}</div>`:''}
+
+          <!-- ตารางเปรียบเทียบ -->
+          <div style="display:flex;gap:10px;font-size:10px;color:var(--muted);margin-top:6px;flex-wrap:wrap">
+            <span>มีอยู่จริง <b style="color:var(--text)">${fB(r.realVal)}</b></span>
+            <span>เป้าหมาย <b style="color:var(--b)">${fB(r.targetVal)}</b></span>
+            <span>ส่วนต่าง <b style="color:${col}">${r.toBuy>=0?'+':''}${fB(r.toBuy)}</b></span>
+          </div>
+        </div>`;
+      }).join('')}
+      <div style="margin-top:10px;padding:10px 12px;background:var(--bg3);border-radius:8px;font-size:11px">
+        <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+          <span style="color:var(--muted2)">รวมที่ต้องซื้อ (เฉพาะ +)</span>
+          <span class="mono pos">${fB(sumToBuy)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span style="color:var(--muted2)">เงินที่จะเพิ่ม</span>
+          <span class="mono" style="color:var(--y)">${fB(addMoney)}</span>
+        </div>
+        ${Math.abs(sumToBuy-addMoney)>50?`<div style="margin-top:6px;font-size:10px;color:var(--y)">⚠️ ต่างกัน ${fB(Math.abs(sumToBuy-addMoney))} — เพราะ % เป้ารวมไม่ใช่ 100%</div>`:`<div style="margin-top:6px;font-size:10px;color:var(--g)">✅ ยอดซื้อรวมตรงกับเงินที่เพิ่ม</div>`}
+      </div>
+      <button class="btn btn-g btn-full" style="margin-top:10px" onclick="saveRebal(${portVal},${addMoney},${newTotal})">
+        💾 บันทึกรอบ Rebalance นี้
+      </button>
+    </div>
+  </div>`;
+  rRebalHistory();
+}
+
+function updateTgt(id,v){
+  const i=DB.investments.find(x=>x.id===id);
+  if(i){i.tgt=parseFloat(v)||0;saveDB();}
+  const tot=DB.investments.reduce((s,i)=>s+(i.tgt||0),0);
+  const el=document.getElementById('tgt-total');
+  if(el){el.textContent=`${fN(tot,1)}%`;el.className=`tag ${Math.abs(tot-100)<0.1?'tg':tot>100?'tr':'ty'}`;}
+}
+
+/* ══ REBALANCE HISTORY ════════════════════════════════════════════════ */
+function saveRebal(portVal,addMoney,newTotal){
+  const fx=DB.usdthb||35;
+  const snap=DB.investments.filter(i=>(i.tgt||0)>0).map(i=>({
+    sym:i.sym, cat:i.cat, tgt:i.tgt,
+    realVal:i.qty*(i.curPrice||i.buyPrice)*fx,
+    targetVal:newTotal*(i.tgt/100),
+    toBuy:newTotal*(i.tgt/100)-(i.qty*(i.curPrice||i.buyPrice)*fx),
+    price:i.curPrice||i.buyPrice,
+  }));
+  const rec={
+    id:uid(), date:today(),
+    portBefore:portVal, addMoney, portAfter:newTotal,
+    usdthb:fx, snap,
+  };
+  if(!DB.rebalHistory) DB.rebalHistory=[];
+  DB.rebalHistory.unshift(rec); // newest first
+  saveDB();
+  toast('บันทึกประวัติ Rebalance แล้ว ✅');
+  rRebalHistory();
+}
+
+function rRebalHistory(){
+  const wrap=document.getElementById('reb-hist-wrap');
+  if(!wrap) return;
+  const hist=(DB.rebalHistory||[]);
+  if(!hist.length){
+    wrap.innerHTML=`<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">
+      ยังไม่มีประวัติ — กด "บันทึกรอบ Rebalance" หลังคำนวณ</div>`;
+    return;
+  }
+  wrap.innerHTML=`<div class="card" style="margin-top:4px">
+    <div class="ch">
+      <span class="ct">📋 ประวัติ Rebalance</span>
+      <span class="tag tm">${hist.length} รอบ</span>
+    </div>
+    <div>
+    ${hist.map((h,hi)=>{
+      const totalBuy=h.snap.reduce((s,r)=>s+(r.toBuy>0?r.toBuy:0),0);
+      return`<div style="border-bottom:1px solid var(--border)">
+        <!-- header row (always visible) -->
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;cursor:pointer"
+             onclick="toggleRebHist('rh-${h.id}',this)">
+          <div>
+            <div style="font-size:12px;font-weight:700">${h.date}</div>
+            <div style="font-size:10px;color:var(--muted2);margin-top:2px">
+              พอร์ต <b style="color:var(--b)">${fB(h.portBefore)}</b>
+              + เพิ่ม <b style="color:var(--g)">${fB(h.addMoney)}</b>
+              = <b style="color:var(--y)">${fB(h.portAfter)}</b>
+            </div>
+          </div>
+          <div style="display:flex;align-items:center;gap:7px">
+            <span class="tag tg" style="font-size:9px">ซื้อ ${fB(totalBuy)}</span>
+            <span id="rh-arrow-${h.id}" style="color:var(--muted);font-size:11px;transition:transform .2s">▼</span>
+            <button class="btn btn-ghost btn-xs" onclick="event.stopPropagation();doDeleteRebHist('${h.id}')" style="color:var(--r)">🗑️</button>
+          </div>
+        </div>
+        <!-- detail rows (collapsible) -->
+        <div id="rh-${h.id}" style="display:none;background:var(--bg2);padding:8px 14px 10px">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px;font-size:10px;color:var(--muted)">
+            <span>USD/THB: <b style="color:var(--text)">${fN(h.usdthb,2)}</b></span>
+            <span>จำนวนสินทรัพย์: <b style="color:var(--text)">${h.snap.length} ตัว</b></span>
+          </div>
+          ${h.snap.map(r=>{
+            const isBuy=r.toBuy>50,isOver=r.toBuy<-50;
+            const col=isBuy?'var(--g)':isOver?'var(--r)':'var(--muted)';
+            return`<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--border)">
+              <div>
+                <span class="mono" style="color:${SEC[r.cat]?.color||'#888'};font-size:12px;font-weight:700">${r.sym}</span>
+                <span class="tag tm" style="font-size:8px;margin-left:4px">${fN(r.tgt)}%</span>
+              </div>
+              <span style="font-size:11px;font-weight:700;color:${col}">
+                ${isBuy?`+${fB(r.toBuy)}`:isOver?`⬆ มาก`:`✓ OK`}
+              </span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>`;
+}
+
+function toggleRebHist(id, headerEl){
+  const el=document.getElementById(id);
+  const arrow=document.getElementById('rh-arrow-'+id.replace('rh-',''));
+  if(!el) return;
+  const open=el.style.display==='block';
+  el.style.display=open?'none':'block';
+  if(arrow) arrow.style.transform=open?'':'rotate(180deg)';
+}
+
+function doDeleteRebHist(id){
+  DB.rebalHistory=(DB.rebalHistory||[]).filter(h=>h.id!==id);
+  saveDB(); rRebalHistory(); toast('ลบประวัติแล้ว');
+}
+
+/* ══ RESERVE ═════════════════════════════════════════════════════════ */
+function rRes(){
+  const res=calcRes();
+  const pg=document.getElementById('pg-reserve');
+  pg.innerHTML=`
+  <div class="kg c3">
+    <div class="kpi g"><div class="kico">💰</div><div class="kl">${T('res_bal')}</div><div class="kv g" style="font-size:14px">${fB(res.bal)}</div></div>
+    <div class="kpi g"><div class="kico">⬆️</div><div class="kl">${T('res_income')}</div><div class="kv g" style="font-size:14px">${fB(res.inc)}</div></div>
+    <div class="kpi r"><div class="kico">⬇️</div><div class="kl">${T('res_expense')}</div><div class="kv r" style="font-size:14px">${fB(res.exp)}</div></div>
+  </div>
+  <div class="card">
+    <div class="ch">
+      <span class="ct">รายการ</span>
+      <select class="fs" style="width:88px;padding:5px 7px;font-size:11px" onchange="fRes(this.value)">
+        <option value="">ทั้งหมด</option><option value="income">รายรับ</option><option value="expense">รายจ่าย</option>
+      </select>
+    </div>
+    <div id="res-list"></div>
+  </div>`;
+  fRes('');
+}
+function fRes(f){
+  const list=f?DB.reserve.filter(x=>x.type===f):DB.reserve;
+  const sorted=[...list].sort((a,b)=>b.date.localeCompare(a.date));
+  const el=document.getElementById('res-list');
+  el.innerHTML=sorted.length?sorted.map(t=>`<div style="padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center"><div><div style="font-size:12px;font-weight:600">${t.desc}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${t.date} · <span class="tag ${t.type==='income'?'tg':'tr'}" style="font-size:9px">${t.cat}</span></div></div><div style="display:flex;align-items:center;gap:6px"><div class="mono ${t.amount>=0?'pos':'neg'}" style="font-size:13px;font-weight:700">${t.amount>=0?'+':''}${fB(t.amount)}</div><button class="btn btn-ghost btico" onclick="doDelete('reserve','${t.id}')">🗑️</button></div></div>`).join(''):'<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px">ยังไม่มีธุรกรรม</div>';
+}
+
+/* ══ FOREX BOT ═══════════════════════════════════════════════════════ */
+function rFx(){
+  const fx=calcFx();
+  const pg=document.getElementById('pg-forex');
+  pg.innerHTML=`
+  <div class="kg">
+    <div class="kpi b"><div class="kico">🤖</div><div class="kl">${T('fx_total_bal')}</div><div class="kv b">${fB(fx.totalBal)}</div><div class="ks">${fx.ports} พอร์ต</div></div>
+    <div class="kpi y"><div class="kico">💸</div><div class="kl">${T('fx_total_with')}</div><div class="kv y">${fB(fx.totalWith)}</div><div class="ks">${DB.fxWithdrawals.length} ครั้ง</div></div>
+  </div>
+
+  <!-- Bot Portfolios -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+    <div style="font-weight:700;font-size:13px">🤖 Bot Portfolios</div>
+    <button class="btn btn-b btn-sm" onclick="om('m-fp','new')">+ เพิ่มพอร์ต</button>
+  </div>
+  ${!DB.fxPorts.length?`<div style="text-align:center;padding:30px;color:var(--muted);font-size:12px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--rad);margin-bottom:11px">ยังไม่มีพอร์ต Bot กด "+ เพิ่มพอร์ต"</div>`:
+    DB.fxPorts.map(p=>{
+      const withdrew=DB.fxWithdrawals.filter(w=>w.portId===p.id).reduce((s,w)=>s+w.amount,0);
+      return`<div class="fport">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div class="fport-name">${p.name}</div>
+            ${p.note?`<div style="font-size:10px;color:var(--muted)">${p.note}</div>`:''}
+          </div>
+          <div style="display:flex;gap:3px">
+            <button class="btn btn-ghost btico" onclick="om('m-fp','edit','${p.id}')">✏️</button>
+            <button class="btn btn-ghost btico" onclick="doDelete('fxPorts','${p.id}')">🗑️</button>
+          </div>
+        </div>
+        <div class="fport-bal">${fB(p.balance)}</div>
+        <div style="display:flex;gap:12px;margin-top:8px;font-size:11px;color:var(--muted2)">
+          <span>💸 ถอนไปแล้ว <b style="color:var(--y)">${fB(withdrew)}</b></span>
+          <span>📅 ${p.date||'—'}</span>
+        </div>
+      </div>`;
+    }).join('')}
+
+  <!-- Withdrawal section -->
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;margin-top:4px">
+    <div style="font-weight:700;font-size:13px">💸 ประวัติการถอนกำไร</div>
+    ${DB.fxPorts.length?`<button class="btn btn-y btn-sm" onclick="openFw()">+ บันทึกการถอน</button>`:''}
+  </div>
+  <div class="card">
+    <div id="fw-list"></div>
+  </div>`;
+
+  renderFwList();
+}
+function renderFwList(){
+  const el=document.getElementById('fw-list');
+  if(!el) return;
+  const sorted=[...DB.fxWithdrawals].sort((a,b)=>b.date.localeCompare(a.date));
+  el.innerHTML=sorted.length?sorted.map(w=>{
+    const port=DB.fxPorts.find(p=>p.id===w.portId);
+    const destTag = w.dest==='reserve' ? `<span class="tag tg" style="font-size:9px">→ เงินสำรอง</span>` :
+                    w.dest==='expense' ? `<span class="tag tr" style="font-size:9px">→ ค่าใช้จ่าย</span>` : '';
+    return`<div class="with-row"><div><div style="display:flex;align-items:center;gap:5px"><span style="font-size:12px;font-weight:600">${fB(w.amount)}</span>${destTag}</div><div style="font-size:10px;color:var(--muted);margin-top:2px">${w.date} · ${port?.name||'ไม่ทราบพอร์ต'}${w.note?' · '+w.note:''}</div></div><button class="btn btn-ghost btico" onclick="doDelete('fxWithdrawals','${w.id}')">🗑️</button></div>`;
+  }).join(''):'<div style="text-align:center;padding:24px;color:var(--muted);font-size:12px">ยังไม่มีการถอน</div>';
+}
+
+function openFxMenu(){
+  // toggle between add port / add withdrawal based on context
+  om('m-fp','new');
+}
+function openFw(){
+  const sel=document.getElementById('fw-pid');
+  sel.innerHTML=DB.fxPorts.map(p=>`<option value="${p.id}">${p.name}</option>`).join('');
+  document.getElementById('fw-d').value=today();
+  document.getElementById('fw-a').value='';
+  document.getElementById('fw-note').value='';
+  document.getElementById('fw-r-none').checked=true;
+  document.getElementById('fw-cat-wrap').style.display='none';
+  document.querySelectorAll('#fw-dest-opts label').forEach(l=>l.style.borderColor='var(--border2)');
+  document.getElementById('m-fw').classList.add('open');
+}
+
+function setFwDest(val){
+  document.querySelectorAll('#fw-dest-opts label').forEach(l=>{
+    const inp=l.querySelector('input');
+    l.style.borderColor=inp?.value===val?(val==='reserve'?'var(--g)':val==='expense'?'var(--r)':'var(--muted)'):'var(--border2)';
+  });
+  document.getElementById('fw-cat-wrap').style.display=val==='expense'?'block':'none';
+}
+
+/* ══ MODAL HELPERS ═══════════════════════════════════════════════════ */
+function om(id,mode,eid=null){
+  editId=eid;
+  const findRec=()=>DB.investments.find(x=>x.id===eid)||DB.fxPorts.find(x=>x.id===eid)||null;
+  const d=eid?findRec():null;
+
+  if(id==='m-inv'){
+    document.getElementById('mi-t').textContent=mode==='new'?'➕ เพิ่มสินทรัพย์':'✏️ แก้ไขสินทรัพย์';
+    const bp=d?.sym?KNOWN[d.sym]:null;
+    document.getElementById('mi-sym').value=d?.sym||'';
+    document.getElementById('mi-name').value=d?.name||bp?.name||'';
+    document.getElementById('mi-cat').value=d?.cat||bp?.cat||'BASE';
+    document.getElementById('mi-date').value=d?.date||today();
+    document.getElementById('mi-qty').value=d?.qty||'';
+    document.getElementById('mi-buy').value=d?.buyPrice||'';
+    const totalEl2=document.getElementById('mi-total');totalEl2.value=d?.totalBaht||'';totalEl2.dataset.userEdited=d?.totalBaht?'1':'0';
+    document.getElementById('mi-tgt').value=d?.tgt||bp?.tgt||0;
+    setTimeout(()=>renderTgtChips(d?.sym||''),0);
+    document.getElementById('mi-sh').textContent='';
+    document.getElementById('mi-ch').textContent='';
+    // คืนค่า price mode (new = auto default, edit = restore)
+    _priceMode=d?.priceMode||'auto';
+    _priceHistory=d?.priceHistory?JSON.parse(JSON.stringify(d.priceHistory)):[];
+    // ถ้า new: เพิ่มเดือนปัจจุบันไว้ล่วงหน้าเผื่อเลือก manual
+    if(mode==='new') _priceHistory=[];
+    _lockedField = null;
+    setPriceMode(_priceMode);
+    document.getElementById('mi-cur').value=d?.curPrice||'';
+    renderPriceHistory();
+    if(d?.sym){
+      document.getElementById('mi-ch').textContent=d.sym&&LIVE[d.sym]?`📡 ราคาสด: ${fU(LIVE[d.sym].price)} (${fP(LIVE[d.sym].chg)})`: '';
+      onSym(d.sym);
+    }
+  }
+  if(id==='m-res'){
+    document.getElementById('mr-t').textContent=mode==='new'?'➕ บันทึกธุรกรรม':'✏️ แก้ไขธุรกรรม';
+    const rd=eid?DB.reserve.find(x=>x.id===eid):null;
+    document.getElementById('rr-d').value=rd?.date||today();
+    document.getElementById('rr-t').value=rd?.type||'income';
+    document.getElementById('rr-c').value=rd?.cat||'เงินเดือน';
+    document.getElementById('rr-desc').value=rd?.desc||'';
+    document.getElementById('rr-a').value=rd?Math.abs(rd.amount):'';
+  }
+  if(id==='m-fp'){
+    document.getElementById('mfp-t').textContent=mode==='new'?'➕ เพิ่ม Bot Portfolio':'✏️ แก้ไขพอร์ต';
+    document.getElementById('fp-name').value=d?.name||'';
+    document.getElementById('fp-bal').value=d?.balance||'';
+    document.getElementById('fp-note').value=d?.note||'';
+  }
+  document.getElementById(id).classList.add('open');
+}
+function cm(id){document.getElementById(id).classList.remove('open');editId=null;}
+document.querySelectorAll('.mov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)cm(o.id);}));
+
+/* ══ SAVE FUNCTIONS ══════════════════════════════════════════════════ */
+function saveInv(){
+  const sym=document.getElementById('mi-sym').value.toUpperCase().trim();
+  const name=document.getElementById('mi-name').value.trim();
+  const buyP=parseFloat(document.getElementById('mi-buy').value);
+  const totalBaht=parseFloat(document.getElementById('mi-total').value)||0;
+  const _rawQty=parseFloat(document.getElementById('mi-qty').value);
+  // ถ้า total เป็น source of truth → คำนวณ qty จาก total เพื่อหลีกเลี่ยง rounding error
+  const qty = (_lockedField==='total' && totalBaht>0 && buyP>0)
+    ? totalBaht / (buyP * (DB.usdthb||35))
+    : _rawQty;
+  const finalTotal = totalBaht || (qty * buyP * (DB.usdthb||35));
+  const cat=document.getElementById('mi-cat').value;
+  const date=document.getElementById('mi-date').value;
+  const tgt=parseFloat(document.getElementById('mi-tgt').value)||0;
+  if(!sym||!name||isNaN(qty)||isNaN(buyP)){toast('กรุณากรอกข้อมูลให้ครบ',false);return;}
+
+  let curPrice=buyP;
+  let priceHistory=[];
+  if(_priceMode==='auto'){
+    curPrice=parseFloat(document.getElementById('mi-cur').value)||buyP;
+  }else{
+    priceHistory=_priceHistory.filter(r=>r.price>0);
+    if(!priceHistory.length){toast('กรุณาเพิ่มราคาอย่างน้อย 1 เดือน',false);return;}
+    const latest=[...priceHistory].sort((a,b)=>b.month.localeCompare(a.month))[0];
+    curPrice=latest.price;
+  }
+
+  const rec={id:editId||uid(),sym,name,cat,date,qty,buyPrice:buyP,totalBaht:finalTotal,curPrice,tgt,
+             priceMode:_priceMode,priceHistory};
+  if(editId) DB.investments=DB.investments.map(x=>x.id===editId?rec:x);
+  else DB.investments.push(rec);
+
+  // sync ราคาปัจจุบันไปยังทุก lot ที่มี symbol เดียวกัน
+  DB.investments.forEach(x=>{ if(x.sym===sym) x.curPrice=curPrice; });
+
+  saveDB();cm('m-inv');toast('บันทึกสำเร็จ');rInvest();rDash();
+}
+
+
+function saveRes(){
+  const date=document.getElementById('rr-d').value;
+  const type=document.getElementById('rr-t').value;
+  const cat=document.getElementById('rr-c').value;
+  const desc=document.getElementById('rr-desc').value.trim();
+  const raw=parseFloat(document.getElementById('rr-a').value);
+  if(!date||!desc||isNaN(raw)||raw<=0){toast('กรุณากรอกข้อมูลให้ครบ',false);return;}
+  const amount=type==='expense'?-raw:raw;
+  const rec={id:editId||uid(),date,type,cat,desc,amount};
+  if(editId) DB.reserve=DB.reserve.map(x=>x.id===editId?rec:x);
+  else DB.reserve.push(rec);
+  saveDB();cm('m-res');toast('บันทึกสำเร็จ');rRes();rDash();
+}
+
+function saveFp(){
+  const name=document.getElementById('fp-name').value.trim();
+  const balance=parseFloat(document.getElementById('fp-bal').value);
+  const note=document.getElementById('fp-note').value.trim();
+  if(!name||isNaN(balance)||balance<0){toast('กรุณากรอกชื่อพอร์ตและยอดเงิน',false);return;}
+  const rec={id:editId||uid(),name,balance,note,date:today()};
+  if(editId) DB.fxPorts=DB.fxPorts.map(x=>x.id===editId?rec:x);
+  else DB.fxPorts.push(rec);
+  saveDB();cm('m-fp');toast('บันทึกพอร์ตสำเร็จ');rFx();rDash();
+}
+
+function saveFw(){
+  const portId=document.getElementById('fw-pid').value;
+  const date=document.getElementById('fw-d').value;
+  const amount=parseFloat(document.getElementById('fw-a').value);
+  const note=document.getElementById('fw-note').value.trim();
+  const dest=document.querySelector('input[name="fw-dest"]:checked')?.value||'none';
+  const cat=document.getElementById('fw-cat')?.value||'กำไร FOREX';
+  if(!portId||!date||isNaN(amount)||amount<=0){toast('กรุณากรอกข้อมูลให้ครบ',false);return;}
+  const port=DB.fxPorts.find(p=>p.id===portId);
+
+  // บันทึกการถอน — dest เก็บเป็น metadata เท่านั้น
+  DB.fxWithdrawals.push({id:uid(),portId,date,amount,note,dest,cat});
+
+  // เฉพาะ "โยกไปเงินสำรอง" เท่านั้นที่เพิ่มในเงินสำรอง
+  if(dest==='reserve'){
+    DB.reserve.push({id:uid(),date,type:'income',cat:'รายได้ลงทุน',
+      desc:`กำไร FX${port?' ('+port.name+')':''}${note?' — '+note:''}`,amount});
+    toast(`บันทึกแล้ว ✅ เพิ่ม ${fB(amount)} ในเงินสำรอง`);
+  } else {
+    const label=dest==='expense'?'นำไปใช้จ่าย':'บันทึกการถอน';
+    toast(`${label} ${fB(amount)} ✅`);
+  }
+
+  saveDB();cm('m-fw');rFx();rDash();
+}
+
+/* ══ INVEST FORM HELPERS ═════════════════════════════════════════════ */
+let _symFetchTimer=null;
+async function onSym(v){
+  const sym=v.toUpperCase().trim();
+  const bp=KNOWN[sym];
+  const sh=document.getElementById('mi-sh');
+  const ch=document.getElementById('mi-ch');
+  if(bp){
+    document.getElementById('mi-name').value=bp.name;
+    document.getElementById('mi-cat').value=bp.cat;
+    if(!document.getElementById('mi-tgt').value&&bp.tgt) document.getElementById('mi-tgt').value=bp.tgt;
+    sh.textContent=`✓ ${bp.name}`;sh.className='fhint ok';
+  }else{sh.textContent=sym?'📝 สินทรัพย์ใหม่':'';sh.className='fhint';}
+  // แสดงสถานะราคาที่ใช้ร่วมกัน (ถ้า symbol นี้มีในพอร์ตแล้ว)
+  const sharedEl = document.getElementById('mi-sym-shared');
+  const existingLots = DB.investments.filter(x=>x.sym===sym && x.id!==editId);
+  if(existingLots.length>0 && sharedEl){
+    const sharedPrice = existingLots[0].curPrice || existingLots[0].buyPrice;
+    sharedEl.innerHTML = `🔗 มี ${existingLots.length} lot ในพอร์ต — ราคาปัจจุบันใช้ร่วมกัน (<b style="color:var(--b)">${fU(sharedPrice)}</b>)`;
+    sharedEl.className = 'fhint';
+    // ถ้า field ว่างอยู่ → pre-fill ด้วยราคาที่ใช้ร่วมกัน
+    if(!document.getElementById('mi-cur').value)
+      document.getElementById('mi-cur').value = sharedPrice;
+  } else if(sharedEl){
+    sharedEl.textContent = '';
+  }
+
+  // ถ้าโหมด auto: ดึงราคาอัตโนมัติ
+  if(_priceMode==='auto'){
+    if(LIVE[sym]?.price){
+      document.getElementById('mi-cur').value=LIVE[sym].price;
+      ch.textContent=`📡 ราคาสด: ${fU(LIVE[sym].price)} (${fP(LIVE[sym].chg)})`;
+      ch.className='fhint ok';
+    }else if(sym.length>=2){
+      ch.textContent='⏳ กำลังดึงราคา...';ch.className='fhint';
+      clearTimeout(_symFetchTimer);
+      _symFetchTimer=setTimeout(()=>fetchSinglePrice(sym),700);
+    }else{ch.textContent='';ch.className='fhint';}
+  }
+  recalc('buy');
+  renderTgtChips(sym);
+}
+
+function renderTgtChips(sym){
+  const el=document.getElementById('mi-tgt-chips');
+  const hint=document.getElementById('mi-tgt-hint');
+  if(!el) return;
+
+  const bp=KNOWN[sym];
+  const bpTgt=bp?.tgt||0;
+  const curTgt=parseFloat(document.getElementById('mi-tgt').value)||0;
+
+  // หา total tgt ปัจจุบัน (ไม่นับ editId)
+  const usedTgt=DB.investments
+    .filter(i=>i.id!==editId)
+    .reduce((s,i)=>s+(i.tgt||0),0);
+  const remaining=Math.max(0,100-usedTgt);
+
+  // presets: common values (ไม่รวม blueprint ก่อน — จะแยกแสดง)
+  const commonPresets=[1,2,2.5,3,4,5,6,7,8,10,15,20,25,30,35];
+
+  let html='';
+
+  // auto-fill input ด้วย blueprint ถ้ายังไม่ได้กรอก
+  if(bpTgt>0 && curTgt===0){
+    document.getElementById('mi-tgt').value=bpTgt;
+  }
+  const curTgt2=parseFloat(document.getElementById('mi-tgt').value)||0;
+
+  // ── แถวบน: blueprint chip ถ้ามี — เด่นกว่าทุกอย่าง ──
+  if(bpTgt>0){
+    const isSel=Math.abs(bpTgt-curTgt2)<0.01;
+    const catInfo=SEC[bp?.cat]||SEC.OTHER;
+    html+=`<div style="display:flex;align-items:center;gap:7px;margin-bottom:9px;
+      padding:9px 12px;border-radius:9px;
+      background:${isSel?'rgba(0,223,160,.12)':'rgba(0,223,160,.05)'};
+      border:1.5px solid ${isSel?'var(--g)':'rgba(0,223,160,.25)'};cursor:pointer"
+      onclick="pickTgt(${bpTgt})">
+      <span style="font-size:14px">⭐</span>
+      <div style="flex:1">
+        <div style="font-size:11px;font-weight:700;color:var(--g)">Blueprint ของ ${sym}</div>
+        <div style="font-size:10px;color:var(--muted2);margin-top:1px">${catInfo.label} · เป้า ${bpTgt}%</div>
+      </div>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:800;
+        color:${isSel?'var(--g)':'var(--text)'}">${bpTgt}%</span>
+      ${isSel?'<span style="font-size:11px;color:var(--g)">✓</span>':''}
+    </div>`;
+  }
+
+  // ── แถวล่าง: chips ทั่วไป (ไม่ซ้ำกับ bpTgt) ──
+  const otherPresets=commonPresets.filter(v=>Math.abs(v-bpTgt)>=0.01||!bpTgt);
+  const activeTgt=parseFloat(document.getElementById('mi-tgt').value)||0;
+  html+=`<div style="display:flex;flex-wrap:wrap;gap:5px">
+    ${otherPresets.map(v=>{
+      const isSel=Math.abs(v-activeTgt)<0.01;
+      return`<button type="button"
+        class="tgt-chip ${isSel?'selected':''}"
+        onclick="pickTgt(${v})">${v}%</button>`;
+    }).join('')}
+  </div>`;
+
+  el.innerHTML=html;
+
+  // hint: % ที่เหลือ + สถานะ
+  if(hint){
+    if(remaining>0&&remaining<100){
+      hint.innerHTML=`เหลือที่ยังไม่ได้กำหนด: <b style="color:var(--y)">${fN(remaining,1)}%</b>`;
+      hint.className='fhint'; hint.style.color='';
+    } else if(remaining<=0){
+      hint.innerHTML=`⚠️ ครบ 100% แล้ว — กำหนดเพิ่มจะทำให้รวมเกิน`;
+      hint.className='fhint'; hint.style.color='var(--r)';
+    } else {
+      hint.textContent=''; hint.style.color='';
+    }
+  }
+}
+
+function pickTgt(v){
+  document.getElementById('mi-tgt').value=v;
+  renderTgtChips(document.getElementById('mi-sym').value.toUpperCase().trim());
+}
+
+function onTgtInput(v){
+  renderTgtChips(document.getElementById('mi-sym').value.toUpperCase().trim());
+}
+
+function setPriceMode(mode){
+  _priceMode=mode;
+  document.getElementById('pm-auto-sec').style.display=mode==='auto'?'':'none';
+  document.getElementById('pm-manual-sec').style.display=mode==='manual'?'':'none';
+  document.getElementById('pm-auto-btn').className=`btn btn-sm ${mode==='auto'?'btn-b':'btn-ghost'}`;
+  document.getElementById('pm-manual-btn').className=`btn btn-sm ${mode==='manual'?'btn-b':'btn-ghost'}`;
+}
+
+function renderPriceHistory(){
+  const list=document.getElementById('mi-ph-list');
+  const hint=document.getElementById('mi-ph-hint');
+  if(!_priceHistory.length){
+    list.innerHTML='<div style="color:var(--muted);font-size:11px;padding:8px 0;text-align:center">ยังไม่มีข้อมูล — กด "+ เพิ่มเดือน"</div>';
+    hint.textContent='💡 ราคาของเดือนล่าสุดจะใช้เป็นราคาปัจจุบัน';
+    hint.className='fhint';
+    return;
+  }
+  // เรียงโดยแนบ originalIndex ไว้ก่อน
+  const withIdx=_priceHistory.map((r,i)=>({...r,_i:i})).sort((a,b)=>a.month.localeCompare(b.month));
+  list.innerHTML=withIdx.map(row=>`
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:7px">
+      <input type="month" value="${row.month}"
+        style="flex:1;padding:8px 10px;background:var(--bg3);border:1px solid var(--border2);
+               border-radius:var(--rads);color:var(--text);font-size:13px;outline:none;font-family:'Outfit';-webkit-appearance:none"
+        onchange="_priceHistory[${row._i}].month=this.value;renderPriceHistory()">
+      <div style="position:relative;flex-shrink:0">
+        <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted2);font-size:12px;pointer-events:none">$</span>
+        <input type="number" value="${row.price||''}" placeholder="0.00" step="any"
+          style="width:100px;padding:8px 10px 8px 20px;background:var(--bg3);border:1px solid var(--border2);
+                 border-radius:var(--rads);color:var(--text);font-size:13px;outline:none;font-family:'JetBrains Mono'"
+          onchange="_priceHistory[${row._i}].price=parseFloat(this.value)||0;renderPriceHistory()">
+      </div>
+      <button class="btn btn-ghost btico" onclick="_priceHistory.splice(${row._i},1);renderPriceHistory()">🗑️</button>
+    </div>`).join('');
+  const latest=withIdx[withIdx.length-1];
+  hint.textContent=latest?.price>0
+    ? `💡 ราคาล่าสุด (${latest.month}): $${latest.price} — ใช้เป็นราคาปัจจุบัน ✅`
+    : '💡 ราคาของเดือนล่าสุดจะใช้เป็นราคาปัจจุบัน';
+  hint.className=latest?.price>0?'fhint ok':'fhint';
+}
+
+function addPriceRow(){
+  const now=new Date();
+  // หาเดือนล่าสุดที่ยังไม่มีในลิสต์
+  let target=null;
+  for(let i=0;i<24;i++){
+    const d=new Date(now.getFullYear(),now.getMonth()-i,1);
+    const m=d.toISOString().slice(0,7);
+    if(!_priceHistory.find(r=>r.month===m)){target=m;break;}
+  }
+  if(target) _priceHistory.push({month:target,price:0});
+  else _priceHistory.push({month:new Date().toISOString().slice(0,7),price:0});
+  _priceHistory.sort((a,b)=>a.month.localeCompare(b.month));
+  renderPriceHistory();
+}
+
+async function fetchSinglePrice(symOverride){
+  const sym=(symOverride||document.getElementById('mi-sym').value).toUpperCase().trim();
+  if(!sym){toast('กรุณากรอก Symbol ก่อน',false);return;}
+  const ch=document.getElementById('mi-ch');
+  const btn=document.getElementById('mi-fetch-btn');
+  ch.textContent='⏳ กำลังดึงราคา...';ch.className='fhint';
+  if(btn){btn.disabled=true;btn.textContent='⏳ กำลังดึง...';}
+  try{
+    const url=`https://query1.finance.yahoo.com/v7/finance/quote?symbols=${sym}&fields=regularMarketPrice,regularMarketChangePercent`;
+    const res=await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,{signal:AbortSignal.timeout(9000)});
+    const json=await res.json();
+    const q=json?.quoteResponse?.result?.[0];
+    if(q?.regularMarketPrice){
+      document.getElementById('mi-cur').value=q.regularMarketPrice;
+      ch.textContent=`✅ ${fU(q.regularMarketPrice)} (${fP(q.regularMarketChangePercent||0)})`;
+      ch.className='fhint ok';
+      LIVE[sym]={price:q.regularMarketPrice,chg:q.regularMarketChangePercent||0};
+    }else{
+      ch.textContent='⚠️ ไม่พบราคา — กรอกเองได้เลย';ch.className='fhint';
+    }
+  }catch(e){
+    ch.textContent='⚠️ ดึงไม่ได้ — กรอกเองได้เลย';ch.className='fhint';
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent='📡 ดึงราคา';}
+  }
+}
+/* ══ THREE-WAY CALC: ราคาซื้อ ↔ เงินบาท ↔ จำนวนหุ้น ════════════════
+   กฎ: ถ้ามีข้อมูล 2 ตัว → คำนวณตัวที่ 3 โดยอัตโนมัติ
+   ตัวที่ "ล็อก" (user กรอกเอง) จะไม่ถูกเขียนทับ
+   ลำดับความสำคัญ: qty < total < buy (buy เปลี่ยนทุกอย่าง)
+════════════════════════════════════════════════════════════════════ */
+let _lockedField = null; // 'qty' | 'total' | null
+
+function onBuyInput(){
+  _lockedField = null; // เมื่อ buy เปลี่ยน reset lock
+  recalc('buy');
+}
+function onTotalInput(){
+  _lockedField = 'total';
+  recalc('total');
+}
+function onQtyInput(){
+  _lockedField = 'qty';
+  recalc('qty');
+}
+
+function recalc(changed){
+  const fx = DB.usdthb || 35;
+  const buy  = parseFloat(document.getElementById('mi-buy').value) || 0;
+  const total = parseFloat(document.getElementById('mi-total').value) || 0;
+  const qty  = parseFloat(document.getElementById('mi-qty').value) || 0;
+  const hint = document.getElementById('mi-th');
+
+  // ต้องมี buy เสมอ — เป็นจุดอ้างอิงราคา
+  if(!buy){ hint.textContent=''; return; }
+
+  if(_lockedField === 'total' && total > 0){
+    // เงินบาท + ราคาซื้อ → คำนวณจำนวนหุ้น
+    const calcQty = total / (buy * fx);
+    if(changed !== 'qty'){
+      // เก็บ full precision ใน field — แสดงผล format ใน hint เท่านั้น
+      document.getElementById('mi-qty').value = calcQty;
+    }
+    const displayQty = calcQty < 1 ? fN(calcQty,6) : fN(calcQty,4);
+    hint.innerHTML = `📐 ${fB(total)} ÷ (${fU(buy)} × ${fN(fx,2)}) = <b style="color:var(--g)">${displayQty} หุ้น</b>`;
+    hint.className = 'fhint ok';
+  } else if(_lockedField === 'qty' && qty > 0){
+    // จำนวนหุ้น + ราคาซื้อ → คำนวณเงินบาท
+    const calcBaht = qty * buy * fx;
+    if(changed !== 'total'){
+      document.getElementById('mi-total').value = fN(calcBaht, 2).replace(/,/g,'');
+    }
+    hint.innerHTML = `📐 ${fN(qty)} × ${fU(buy)} × ${fN(fx,2)} = <b style="color:var(--b)">${fB(calcBaht)}</b>`;
+    hint.className = 'fhint ok';
+  } else if(buy > 0 && qty > 0 && !total){
+    // qty มีแต่ไม่มี total และยังไม่ lock → แนะนำ
+    const calcBaht = qty * buy * fx;
+    hint.innerHTML = `💡 <b style="color:var(--b)">${fB(calcBaht)}</b> — <span style="color:var(--g);text-decoration:underline;cursor:pointer" onclick="fillTotal(${calcBaht})">กรอกให้เลย</span>`;
+    hint.className = 'fhint';
+  } else if(buy > 0 && total > 0 && !qty){
+    const calcQty = total / (buy * fx);
+    hint.innerHTML = `💡 <b style="color:var(--g)">${fN(calcQty, calcQty<1?4:2)} หุ้น</b> — <span style="color:var(--g);text-decoration:underline;cursor:pointer" onclick="fillQty(${calcQty})">กรอกให้เลย</span>`;
+    hint.className = 'fhint';
+  } else {
+    hint.textContent = ''; hint.className = 'fhint';
+  }
+}
+
+function fillTotal(v){
+  document.getElementById('mi-total').value = fN(v,2).replace(/,/g,'');
+  _lockedField = 'total';
+  recalc('total');
+}
+function fillQty(v){
+  // เก็บ full precision — ไม่ round เพื่อให้ qty × price = total ตรงพอดี
+  document.getElementById('mi-qty').value = v;
+  _lockedField = 'qty';
+  recalc('qty');
+}
+function calcTotal(){ recalc('buy'); } // backward compat
+
+/* ══ DELETE ══════════════════════════════════════════════════════════ */
+function doDelete(sec,id){
+  document.getElementById('del-ok').onclick=()=>{
+    DB[sec]=DB[sec].filter(x=>x.id!==id);
+    saveDB();cm('m-del');toast('ลบแล้ว');
+    const cur=document.querySelector('.nb.active')?.dataset.p;
+    if(renders[cur]) renders[cur]();
+    rDash();
+  };
+  document.getElementById('m-del').classList.add('open');
+}
+
+/* ══ PIN SYSTEM ══════════════════════════════════════════════════════
+   - PIN stored as SHA-256 hash in localStorage (never plaintext)
+   - Auto-lock after 5 min inactivity (configurable)
+   - 5 failed attempts → 30s cooldown
+   - Setup flow: enter new PIN → confirm PIN
+════════════════════════════════════════════════════════════════════ */
+const PIN_KEY   = 'wo_pin_hash';
+const PIN_FAILS = 'wo_pin_fails';
+const PIN_UNTIL = 'wo_pin_until';
+const LOCK_AFTER = 5 * 60 * 1000; // 5 นาที
+let _pinLocked = false;
+let _lockTimer  = null;
+let _pinBuf     = '';
+let _setupStep  = 0; // 0=enter new, 1=confirm
+let _setupFirst = '';
+let _pssLen     = 4;  // target length during setup
+let _activeLen  = 0;  // actual stored pin length
+
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+function hasPIN(){ return !!localStorage.getItem(PIN_KEY); }
+function getLen(){
+  // store pin length alongside hash for dot rendering
+  return parseInt(localStorage.getItem('wo_pin_len')||'4');
+}
+
+// ── LOCK / UNLOCK ──────────────────────────────────────────────────
+function lockApp(){
+  if(!hasPIN()) return;
+  _pinLocked = true;
+  _pinBuf = '';
+  _activeLen = getLen();
+  clearTimeout(_lockTimer);
+  const sc = document.getElementById('pin-screen');
+  sc.classList.remove('hidden');
+  document.getElementById('pin-title').textContent = 'กรอก PIN เพื่อเข้าใช้งาน';
+  document.getElementById('pin-err').textContent = '';
+  document.getElementById('pin-hint').style.display = 'block';
+  renderPinDots('pin-dots', _pinBuf, _activeLen);
+  buildPinPad('pin-pad', pinKeyPress);
+  checkCooldown();
+}
+
+function unlockApp(){
+  _pinLocked = false;
+  document.getElementById('pin-screen').classList.add('hidden');
+  resetLockTimer();
+}
+
+function resetLockTimer(){
+  if(!hasPIN()) return;
+  clearTimeout(_lockTimer);
+  _lockTimer = setTimeout(lockApp, LOCK_AFTER);
+}
+
+// รีเซ็ต timer ทุกครั้งที่มี interaction
+['touchstart','click','keydown'].forEach(ev =>
+  document.addEventListener(ev, ()=>{ if(!_pinLocked) resetLockTimer(); }, {passive:true})
+);
+
+// ── COOLDOWN CHECK ─────────────────────────────────────────────────
+function checkCooldown(){
+  const until = parseInt(localStorage.getItem(PIN_UNTIL)||'0');
+  const now = Date.now();
+  if(until > now){
+    const secs = Math.ceil((until - now)/1000);
+    disablePinPad('pin-pad', true);
+    document.getElementById('pin-err').textContent = `⏳ ลองใหม่ใน ${secs} วินาที`;
+    const iv = setInterval(()=>{
+      const s = Math.ceil((parseInt(localStorage.getItem(PIN_UNTIL)||'0') - Date.now())/1000);
+      if(s <= 0){ clearInterval(iv); disablePinPad('pin-pad', false); document.getElementById('pin-err').textContent=''; }
+      else document.getElementById('pin-err').textContent = `⏳ ลองใหม่ใน ${s} วินาที`;
+    }, 1000);
+  }
+}
+
+function disablePinPad(padId, dis){
+  document.getElementById(padId)?.querySelectorAll('.pin-key')
+    .forEach(k => k.disabled = dis);
+}
+
+// ── PIN KEY PRESS ─────────────────────────────────────────────────
+async function pinKeyPress(k){
+  if(parseInt(localStorage.getItem(PIN_UNTIL)||'0') > Date.now()) return;
+  if(k === 'del'){
+    _pinBuf = _pinBuf.slice(0,-1);
+  } else {
+    if(_pinBuf.length >= _activeLen) return;
+    _pinBuf += k;
+  }
+  renderPinDots('pin-dots', _pinBuf, _activeLen);
+  if(_pinBuf.length === _activeLen){
+    await checkPin(_pinBuf);
+  }
+}
+
+async function checkPin(entered){
+  const hash = await sha256(entered);
+  const stored = localStorage.getItem(PIN_KEY);
+  if(hash === stored){
+    localStorage.removeItem(PIN_FAILS);
+    localStorage.removeItem(PIN_UNTIL);
+    _pinBuf = '';
+    // success flash
+    document.querySelectorAll('#pin-dots .pin-dot').forEach(d => {
+      d.style.background = 'var(--g)'; d.style.borderColor = 'var(--g)';
+    });
+    setTimeout(unlockApp, 260);
+  } else {
+    // wrong pin
+    const fails = (parseInt(localStorage.getItem(PIN_FAILS)||'0')) + 1;
+    localStorage.setItem(PIN_FAILS, fails);
+    if(fails >= 5){
+      const until = Date.now() + 30000;
+      localStorage.setItem(PIN_UNTIL, until);
+      document.getElementById('pin-err').textContent = '⏳ ลองใหม่ใน 30 วินาที';
+      setTimeout(checkCooldown, 0);
+    } else {
+      document.getElementById('pin-err').textContent = `PIN ไม่ถูกต้อง (${5-fails} ครั้งที่เหลือ)`;
+    }
+    // shake + error dots
+    document.querySelectorAll('#pin-dots .pin-dot').forEach(d => d.classList.add('error'));
+    const sc = document.getElementById('pin-screen');
+    sc.classList.add('shake');
+    setTimeout(()=>{
+      sc.classList.remove('shake');
+      _pinBuf = '';
+      renderPinDots('pin-dots', '', _activeLen);
+      document.querySelectorAll('#pin-dots .pin-dot').forEach(d => d.classList.remove('error'));
+    }, 420);
+  }
+}
+
+// ── PIN FORGOT ────────────────────────────────────────────────────
+function pinForgot(){
+  if(!confirm('⚠️ การรีเซ็ต PIN จะล้างข้อมูลทั้งหมดในแอป ยืนยันหรือไม่?')) return;
+  localStorage.clear();
+  location.reload();
+}
+
+// ── RENDER HELPERS ─────────────────────────────────────────────────
+function renderPinDots(containerId, buf, len){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  el.innerHTML = Array.from({length:len},(_,i)=>
+    `<div class="pin-dot ${i < buf.length ? 'filled':''}"></div>`
+  ).join('');
+}
+
+const PAD_KEYS = [
+  {n:'1',s:''},{n:'2',s:'ABC'},{n:'3',s:'DEF'},
+  {n:'4',s:'GHI'},{n:'5',s:'JKL'},{n:'6',s:'MNO'},
+  {n:'7',s:'PQRS'},{n:'8',s:'TUV'},{n:'9',s:'WXYZ'},
+  {n:'0',s:''},
+];
+
+function buildPinPad(padId, handler){
+  const el = document.getElementById(padId);
+  if(!el) return;
+  let html = '';
+  for(let i=0;i<9;i++){
+    const k = PAD_KEYS[i];
+    html += `<button class="pin-key" onclick="(${handler.name}||window['${handler.name}'])('${k.n}')">
+      ${k.n}${k.s?`<span class="pin-sub">${k.s}</span>`:''}
+    </button>`;
+  }
+  // row 4: empty, 0, del
+  html += `<button class="pin-key" style="visibility:hidden" disabled></button>`;
+  html += `<button class="pin-key pin-key-0" onclick="(${handler.name}||window['${handler.name}'])('0')">0</button>`;
+  html += `<button class="pin-key pin-key-del" onclick="(${handler.name}||window['${handler.name}'])('del')">⌫</button>`;
+  el.innerHTML = html;
+}
+
+// ── PIN SETUP FLOW ─────────────────────────────────────────────────
+function openPinSetup(){
+  _setupStep = 0; _setupFirst = ''; _pinBuf = '';
+  _pssLen = hasPIN() ? getLen() : 4;
+  document.getElementById('pss-title').textContent = hasPIN() ? '🔐 เปลี่ยน PIN' : '🔐 ตั้ง PIN ใหม่';
+  document.getElementById('pss-desc').textContent = `เลือก PIN ${_pssLen} หลัก`;
+  document.getElementById('pss-err').textContent = '';
+  // length picker row
+  buildPssLenPicker();
+  renderPinDots('pss-dots', '', _pssLen);
+  buildPinPad('pss-pad', pssKeyPress);
+  document.getElementById('pin-setup-wrap').classList.remove('hidden');
+}
+
+function buildPssLenPicker(){
+  // inject a "4 / 5 / 6 หลัก" toggle above pss-dots if not exists
+  let picker = document.getElementById('pss-len-pick');
+  if(!picker){
+    picker = document.createElement('div');
+    picker.id = 'pss-len-pick';
+    picker.style.cssText = 'display:flex;gap:8px;margin-bottom:20px;z-index:1;position:relative';
+    document.getElementById('pss-dots').insertAdjacentElement('beforebegin', picker);
+  }
+  picker.innerHTML = [4,5,6].map(n =>
+    `<button onclick="setPssLen(${n})" style="
+      flex:1;padding:7px 0;border-radius:7px;border:1px solid ${n===_pssLen?'var(--b)':'var(--border2)'};
+      background:${n===_pssLen?'rgba(75,150,255,.15)':'var(--bg3)'};
+      color:${n===_pssLen?'var(--b)':'var(--muted2)'};
+      font-family:'Outfit';font-size:13px;font-weight:${n===_pssLen?'700':'500'};cursor:pointer">
+      ${n} หลัก
+    </button>`
+  ).join('');
+}
+
+function setPssLen(n){
+  _pssLen = n; _pinBuf = '';
+  buildPssLenPicker();
+  renderPinDots('pss-dots', '', _pssLen);
+  document.getElementById('pss-err').textContent = '';
+}
+
+async function pssKeyPress(k){
+  if(k === 'del'){
+    _pinBuf = _pinBuf.slice(0,-1);
+  } else {
+    if(_pinBuf.length >= _pssLen) return;
+    _pinBuf += k;
+  }
+  renderPinDots('pss-dots', _pinBuf, _pssLen);
+  if(_pinBuf.length === _pssLen){
+    if(_setupStep === 0){
+      // step 1: เก็บ PIN แรก รอยืนยัน
+      _setupFirst = _pinBuf;
+      _pinBuf = '';
+      _setupStep = 1;
+      document.getElementById('pss-title').textContent = '✅ ยืนยัน PIN อีกครั้ง';
+      document.getElementById('pss-desc').textContent = 'กรอก PIN เดิมซ้ำเพื่อยืนยัน';
+      document.getElementById('pss-err').textContent = '';
+      document.getElementById('pss-len-pick').style.display = 'none';
+      renderPinDots('pss-dots', '', _pssLen);
+    } else {
+      // step 2: ตรวจสอบ
+      if(_pinBuf === _setupFirst){
+        const hash = await sha256(_pinBuf);
+        localStorage.setItem(PIN_KEY, hash);
+        localStorage.setItem('wo_pin_len', _pssLen);
+        localStorage.removeItem(PIN_FAILS);
+        localStorage.removeItem(PIN_UNTIL);
+        closePinSetup();
+        toast('ตั้ง PIN สำเร็จ 🔐');
+        resetLockTimer();
+        rSettingsIfOpen();
+      } else {
+        document.getElementById('pss-err').textContent = 'PIN ไม่ตรงกัน ลองใหม่';
+        document.querySelectorAll('#pss-dots .pin-dot').forEach(d => d.classList.add('error'));
+        const box = document.querySelector('.pin-setup-box');
+        box.style.animation = 'none';
+        setTimeout(()=>{
+          _pinBuf = ''; _setupStep = 0; _setupFirst = '';
+          document.getElementById('pss-title').textContent = hasPIN()?'🔐 เปลี่ยน PIN':'🔐 ตั้ง PIN ใหม่';
+          document.getElementById('pss-desc').textContent = `เลือก PIN ${_pssLen} หลัก`;
+          document.getElementById('pss-len-pick').style.display = '';
+          renderPinDots('pss-dots', '', _pssLen);
+          document.querySelectorAll('#pss-dots .pin-dot').forEach(d => d.classList.remove('error'));
+        }, 500);
+      }
+    }
+  }
+}
+
+function closePinSetup(){
+  document.getElementById('pin-setup-wrap').classList.add('hidden');
+  _pinBuf = '';
+}
+
+function removePIN(){
+  if(!confirm('ปิดการใช้ PIN lock ใช่ไหม?')) return;
+  localStorage.removeItem(PIN_KEY);
+  localStorage.removeItem('wo_pin_len');
+  localStorage.removeItem(PIN_FAILS);
+  localStorage.removeItem(PIN_UNTIL);
+  clearTimeout(_lockTimer);
+  toast('ปิด PIN lock แล้ว');
+  rSettingsIfOpen();
+}
+
+function rSettingsIfOpen(){
+  // re-render settings card ถ้ามีอยู่
+  const sc = document.getElementById('pin-settings-card');
+  if(sc) renderPinSettingsCard(sc);
+}
+
+// ── PIN SETTINGS CARD (ใน Dashboard หรือ topbar) ────────────────────
+function renderPinSettingsCard(el){
+  const active = hasPIN();
+  el.innerHTML = `
+    <div class="ch"><span class="ct">🔐 PIN Lock</span><span class="tag ${active?'tg':'tm'}">${active?'เปิดใช้งาน':'ปิดอยู่'}</span></div>
+    <div class="cb" style="padding:10px 14px;display:flex;flex-direction:column;gap:8px">
+      ${active ? `
+        <div style="font-size:12px;color:var(--muted2);line-height:1.6">
+          🔐 PIN ${getLen()} หลัก · ล็อกอัตโนมัติหลัง <b style="color:var(--text)">5 นาที</b> ไม่ใช้งาน
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-ghost btn-sm btn-full" onclick="openPinSetup()">✏️ เปลี่ยน PIN</button>
+          <button class="btn btn-r btn-sm btn-full" onclick="removePIN()">🔓 ปิด PIN</button>
+        </div>` : `
+        <div style="font-size:12px;color:var(--muted2);line-height:1.6">
+          ป้องกันการเข้าถึงข้อมูลเมื่อคนอื่นหยิบโทรศัพท์คุณ
+        </div>
+        <button class="btn btn-b btn-sm btn-full" onclick="openPinSetup()">🔐 เปิดใช้ PIN Lock</button>`}
+    </div>`;
+}
+
+/* ══ BUDGET PAGE ═════════════════════════════════════════════════════ */
+/* ══ BUDGET — MONTHLY TRACKER ════════════════════════════════════════ */
+let _budgetMonth = new Date().toISOString().slice(0,7); // "YYYY-MM"
+
+function fMonth(m){
+  const thM=['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const [y,mo]=m.split('-');
+  return `${thM[parseInt(mo)]} ${parseInt(y)+543}`;
+}
+
+function shiftMonth(delta){
+  const [y,m]=_budgetMonth.split('-').map(Number);
+  const d=new Date(y,m-1+delta,1);
+  _budgetMonth=d.toISOString().slice(0,7);
+  rBudget();
+}
+
+function calcBudget(month){
+  month = month || _budgetMonth;
+  const entries = (DB.budgetEntries||[]).filter(e=>e.month===month);
+  // รายรับ: จัดกลุ่มตาม catId
+  const incMap={};
+  entries.filter(e=>e.type==='income').forEach(e=>{
+    incMap[e.catId]=(incMap[e.catId]||0)+e.amount;
+  });
+  // รายจ่าย: จัดกลุ่มตาม catId
+  const expMap={};
+  entries.filter(e=>e.type==='expense').forEach(e=>{
+    expMap[e.catId]=(expMap[e.catId]||0)+e.amount;
+  });
+  const totalBudgetInc=(DB.budgetIncome||[]).reduce((s,c)=>s+(c.monthly||0),0);
+  const totalBudgetExp=(DB.budgetCats||[]).reduce((s,c)=>s+(c.monthly||0),0);
+  const totalActualInc=Object.values(incMap).reduce((s,v)=>s+v,0);
+  const totalActualExp=Object.values(expMap).reduce((s,v)=>s+v,0);
+  return {entries,incMap,expMap,totalBudgetInc,totalBudgetExp,totalActualInc,totalActualExp,month};
+}
+
+function rBudget(){
+  const {entries,incMap,expMap,totalBudgetInc,totalBudgetExp,totalActualInc,totalActualExp}=calcBudget();
+  const pg=document.getElementById('pg-budget');
+  const isCurrentMonth=_budgetMonth===new Date().toISOString().slice(0,7);
+  const net=totalActualInc-totalActualExp;
+  const expPct=totalBudgetExp>0?Math.min(100,totalActualExp/totalBudgetExp*100):totalActualExp>0?100:0;
+  const overExp=totalActualExp>totalBudgetExp&&totalBudgetExp>0;
+
+  pg.innerHTML=`
+  <!-- month navigator -->
+  <div class="mnav">
+    <button class="mnav-btn" onclick="shiftMonth(-1)">‹</button>
+    <div style="text-align:center">
+      <div class="mnav-label">${fMonth(_budgetMonth)}</div>
+      ${isCurrentMonth?'<div style="font-size:9px;color:var(--g);font-weight:600">● เดือนนี้</div>':''}
+    </div>
+    <button class="mnav-btn" onclick="shiftMonth(1)" ${isCurrentMonth?'style="opacity:.3;pointer-events:none"':''}>›</button>
+  </div>
+
+  <!-- KPI -->
+  <div class="kg c3" style="margin-bottom:11px">
+    <div class="kpi g">
+      <div class="kico">💚</div>
+      <div class="kl">${T('bg_income_actual')}</div>
+      <div class="kv g" style="font-size:15px">${fB(totalActualInc)}</div>
+      <div class="ks">ตั้งไว้ ${fB(totalBudgetInc)}</div>
+    </div>
+    <div class="kpi ${overExp?'r':'y'}">
+      <div class="kico">🔴</div>
+      <div class="kl">${T('bg_expense_actual')}</div>
+      <div class="kv ${overExp?'r':'y'}" style="font-size:15px">${fB(totalActualExp)}</div>
+      <div class="ks">งบ ${fB(totalBudgetExp)}</div>
+    </div>
+    <div class="kpi ${net>=0?'b':'r'}">
+      <div class="kico">${net>=0?'📈':'📉'}</div>
+      <div class="kl">${net>=0?'คงเหลือ':'ขาด'}</div>
+      <div class="kv ${net>=0?'b':'r'}" style="font-size:15px">${fB(Math.abs(net))}</div>
+      <div class="ks">${fN(expPct,0)}% ${T('bg_used')}</div>
+    </div>
+  </div>
+
+  <!-- expense progress -->
+  ${totalBudgetExp>0?`<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--rads);padding:11px 14px;margin-bottom:11px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:6px">
+      <span>รายจ่ายรวม vs งบ</span>
+      <span style="font-weight:700;color:${overExp?'var(--r)':expPct>80?'var(--y)':'var(--g)'}">${fN(expPct,0)}%</span>
+    </div>
+    <div class="pbar-w" style="height:7px"><div class="pbar" style="width:${expPct}%;background:${overExp?'var(--r)':expPct>80?'var(--y)':'var(--g)'}"></div></div>
+  </div>`:''}
+
+  <!-- income card -->
+  <div class="card" style="margin-bottom:11px">
+    <div class="ch">
+      <span class="ct">💚 รายรับ</span>
+      <button class="btn btn-ghost btn-xs" onclick="openAddEntry('income')">+ บันทึก</button>
+    </div>
+    <div>
+    ${(DB.budgetIncome||[]).map(inc=>{
+      const actual=incMap[inc.id]||0;
+      const planned=inc.monthly||0;
+      const diff=actual-planned;
+      return`<div class="bcat-row">
+        <div class="bcat-icon">${inc.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="bcat-name">${inc.name}</span>
+            <div style="text-align:right">
+              <span class="mono pos" style="font-size:13px;font-weight:700">${actual>0?fB(actual):'—'}</span>
+              ${planned>0?`<span style="color:var(--muted);font-size:10px"> / ${fB(planned)}</span>`:''}
+            </div>
+          </div>
+          ${planned>0&&actual>0?`<div style="font-size:10px;margin-top:2px;color:${diff>=0?'var(--g)':'var(--r)'}">
+            ${diff>=0?`${T('bg_above_target')} ${fB(diff)}`:`${T('bg_below_target')} ${fB(Math.abs(diff))}`}
+          </div>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>
+
+  <!-- expense card -->
+  <div class="card" style="margin-bottom:11px">
+    <div class="ch">
+      <span class="ct">🔴 รายจ่าย</span>
+      <button class="btn btn-ghost btn-xs" onclick="openAddEntry('expense')">+ บันทึก</button>
+    </div>
+    <div>
+    ${(DB.budgetCats||[]).map(cat=>{
+      const actual=expMap[cat.id]||0;
+      const bgt=cat.monthly||0;
+      const p=bgt>0?Math.min(100,actual/bgt*100):actual>0?100:0;
+      const over=actual>bgt&&bgt>0;
+      const col=over?'var(--r)':p>80?'var(--y)':'var(--g)';
+      return`<div class="bcat-row">
+        <div class="bcat-icon">${cat.icon}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="bcat-name">${cat.name}</span>
+            <div style="text-align:right">
+              <span class="mono" style="font-size:12px;color:${actual>0?col:'var(--muted)'};font-weight:700">${actual>0?fB(actual):'—'}</span>
+              ${bgt>0?`<span style="color:var(--muted);font-size:10px"> / ${fB(bgt)}</span>`:''}
+            </div>
+          </div>
+          ${bgt>0?`<div class="bcat-bar-wrap"><div class="bcat-bar" style="width:${p}%;background:${col}"></div></div>`:''}
+        </div>
+      </div>`;
+    }).join('')}
+    </div>
+  </div>
+
+  <!-- transaction list -->
+  ${entries.length?`<div class="card">
+    <div class="ch"><span class="ct">📋 รายการเดือนนี้</span><span class="tag tm">${entries.length} ${T('bg_tx_count')}</span></div>
+    <div>${[...entries].reverse().map(e=>`
+      <div class="entry-row">
+        <span style="font-size:17px;width:26px;text-align:center">${e.icon||'📦'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600">${e.catName}</div>
+          ${e.note?`<div style="font-size:10px;color:var(--muted2)">${e.note}</div>`:''}
+        </div>
+        <span class="mono ${e.type==='income'?'pos':'neg'}" style="font-size:13px;font-weight:700">
+          ${e.type==='income'?'+':'−'}${fB(e.amount)}
+        </span>
+        <button class="btn btn-ghost btico" onclick="deleteBEntry('${e.id}')" style="font-size:12px">🗑️</button>
+      </div>`).join('')}
+    </div>
+  </div>`:''}
+
+  <div style="text-align:center;padding:10px 0">
+    <button class="btn btn-ghost btn-sm" onclick="openBudgetEdit()">⚙️ ตั้งค่างบประมาณ</button>
+  </div>`;
+}
+
+/* ── BUDGET ENTRY CRUD ─────────────────────────────────────────────── */
+let _beType = 'income';
+
+function openAddEntry(type='income'){
+  _beType = type;
+  setBEType(type);
+  document.getElementById('mbentry-t').textContent = type==='income'?'+ บันทึกรายรับ':'+ บันทึกรายจ่าย';
+  document.getElementById('be-month').value = _budgetMonth;
+  document.getElementById('be-amount').value = '';
+  document.getElementById('be-note').value = '';
+  _fillBECat(type);
+  document.getElementById('m-bentry').classList.add('open');
+}
+
+function setBEType(type){
+  _beType = type;
+  document.getElementById('betype-inc').className = `btn btn-sm btn-full ${type==='income'?'btn-g':'btn-ghost'}`;
+  document.getElementById('betype-exp').className = `btn btn-sm btn-full ${type==='expense'?'btn-r':'btn-ghost'}`;
+  _fillBECat(type);
+}
+
+function _fillBECat(type){
+  const sel = document.getElementById('be-cat');
+  if(!sel) return;
+  const items = type==='income' ? (DB.budgetIncome||[]) : (DB.budgetCats||[]);
+  sel.innerHTML = items.map(c=>`<option value="${c.id}" data-icon="${c.icon}">${c.icon} ${c.name}</option>`).join('');
+}
+
+function saveBEntry(){
+  const month = document.getElementById('be-month').value;
+  const catId = document.getElementById('be-cat').value;
+  const amount = parseFloat(document.getElementById('be-amount').value);
+  const note = document.getElementById('be-note').value.trim();
+  if(!month||!catId||isNaN(amount)||amount<=0){toast('กรุณากรอกข้อมูลให้ครบ',false);return;}
+  const items = _beType==='income'?(DB.budgetIncome||[]):(DB.budgetCats||[]);
+  const cat = items.find(c=>c.id===catId);
+  if(!DB.budgetEntries) DB.budgetEntries=[];
+  DB.budgetEntries.push({id:uid(),month,type:_beType,catId,catName:cat?.name||'',icon:cat?.icon||'📦',amount,note});
+  saveDB(); cm('m-bentry'); toast('บันทึกแล้ว ✅');
+  _budgetMonth = month; // navigate to recorded month
+  rBudget();
+}
+
+function deleteBEntry(id){
+  DB.budgetEntries=(DB.budgetEntries||[]).filter(e=>e.id!==id);
+  saveDB(); rBudget(); toast('ลบแล้ว');
+}
+
+let _budgetEditMode = 'cat'; // 'cat' | 'inc'
+function openBudgetEdit(mode='cat'){
+  _budgetEditMode = mode;
+  renderBudgetEditBody();
+  document.getElementById('m-budget').classList.add('open');
+}
+
+function renderBudgetEditBody(){
+  const isCat = _budgetEditMode==='cat';
+  const items = isCat ? (DB.budgetCats||[]) : (DB.budgetIncome||[]);
+  const body = document.getElementById('mbudget-body');
+  document.getElementById('mbudget-t').textContent = isCat ? '⚙️ จัดการรายจ่าย' : '⚙️ จัดการรายได้';
+  body.innerHTML = `
+    <!-- tab toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button class="btn ${isCat?'btn-r':'btn-ghost'} btn-sm btn-full"
+        onclick="_budgetEditMode='cat';renderBudgetEditBody()">🔴 รายจ่าย</button>
+      <button class="btn ${!isCat?'btn-g':'btn-ghost'} btn-sm btn-full"
+        onclick="_budgetEditMode='inc';renderBudgetEditBody()">💚 รายได้</button>
+    </div>
+
+    <!-- rows -->
+    <div id="bge-list">
+    ${items.map((item,idx)=>`
+      <div style="background:var(--bg3);border:1px solid var(--border);border-radius:var(--rads);
+                  padding:10px 12px;margin-bottom:8px">
+        <!-- row 1: icon picker + name -->
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <button type="button"
+            style="font-size:22px;width:38px;height:38px;border-radius:8px;border:1px solid var(--border2);
+                   background:var(--bg4);cursor:pointer;flex-shrink:0;line-height:1"
+            onclick="pickBudgetIcon('${_budgetEditMode}','${item.id}')"
+            id="bge-icon-${item.id}">${item.icon}</button>
+          <input type="text" value="${item.name}"
+            style="flex:1;padding:8px 10px;background:var(--bg2);border:1px solid var(--border2);
+                   border-radius:var(--rads);color:var(--text);font-family:'Outfit';font-size:13px;
+                   font-weight:600;outline:none"
+            onchange="updateBudgetName('${_budgetEditMode}','${item.id}',this.value)"
+            placeholder="ชื่อหมวด">
+          <button type="button" onclick="deleteBudgetItem('${_budgetEditMode}','${item.id}')"
+            style="background:none;border:none;color:var(--r);cursor:pointer;font-size:16px;
+                   padding:4px 6px;flex-shrink:0">🗑️</button>
+        </div>
+        <!-- row 2: monthly budget -->
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:11px;color:var(--muted2);white-space:nowrap">งบต่อเดือน</span>
+          <div style="position:relative;flex:1">
+            <span style="position:absolute;left:9px;top:50%;transform:translateY(-50%);
+                         color:var(--muted2);font-size:12px;pointer-events:none">฿</span>
+            <input class="budget-edit-input" type="number" value="${item.monthly||''}"
+              placeholder="0" step="100" min="0" style="padding-left:22px;width:100%"
+              data-mode="${_budgetEditMode}" data-id="${item.id}">
+          </div>
+        </div>
+      </div>`).join('')}
+    </div>
+
+    <button class="btn btn-ghost btn-sm btn-full" onclick="addBudgetItem()" style="margin-top:2px">
+      + เพิ่มหมวดใหม่
+    </button>`;
+}
+
+// ── EMOJI PICKER ──────────────────────────────────────────────────────
+const BUDGET_EMOJIS = [
+  '🍽️','☕','🥤','🍕','🛒','🏠','💡','💧','📱','🚗','🚕','✈️','🚂',
+  '💊','🏥','❤️','🛍️','👗','👟','💄','🎮','🎬','🎵','🎨','📚','🎓',
+  '💆','🧘','🏋️','⚽','💎','💰','📈','🏦','🔧','🏡','🐾','🌿','☀️',
+  '🎁','💌','🎂','📦','💡','⚡','🌟','🎯','🔑','🎪','🌍','🤖'
+];
+
+function pickBudgetIcon(mode, id){
+  // remove existing picker
+  document.getElementById('bge-icon-picker')?.remove();
+  const btn = document.getElementById('bge-icon-'+id);
+  if(!btn) return;
+  const picker = document.createElement('div');
+  picker.id = 'bge-icon-picker';
+  picker.style.cssText = `position:fixed;z-index:9999;background:var(--bg1);border:1px solid var(--border2);
+    border-radius:12px;padding:10px;display:flex;flex-wrap:wrap;gap:4px;
+    max-width:280px;box-shadow:0 8px 32px rgba(0,0,0,.6)`;
+  picker.innerHTML = BUDGET_EMOJIS.map(e=>
+    `<button type="button" style="font-size:20px;padding:4px 5px;border:none;background:none;
+      cursor:pointer;border-radius:6px;line-height:1"
+      onmouseover="this.style.background='var(--bg3)'" onmouseout="this.style.background='none'"
+      onclick="applyBudgetIcon('${mode}','${id}','${e}')">${e}</button>`
+  ).join('');
+  // position near button
+  const r = btn.getBoundingClientRect();
+  picker.style.top  = Math.min(r.bottom+6, window.innerHeight-220) + 'px';
+  picker.style.left = Math.max(8, Math.min(r.left, window.innerWidth-296)) + 'px';
+  document.body.appendChild(picker);
+  setTimeout(()=>document.addEventListener('click', closePicker, {once:true}), 50);
+}
+function closePicker(){ document.getElementById('bge-icon-picker')?.remove(); }
+function applyBudgetIcon(mode, id, emoji){
+  const items = mode==='cat'?(DB.budgetCats||[]):(DB.budgetIncome||[]);
+  const item = items.find(i=>i.id===id);
+  if(item){ item.icon=emoji; saveDB(); }
+  const btn = document.getElementById('bge-icon-'+id);
+  if(btn) btn.textContent = emoji;
+  // update entries that reference this item
+  (DB.budgetEntries||[]).filter(e=>e.catId===id).forEach(e=>e.icon=emoji);
+  saveDB();
+  closePicker();
+}
+
+function updateBudgetName(mode, id, name){
+  const items = mode==='cat'?(DB.budgetCats||[]):(DB.budgetIncome||[]);
+  const item = items.find(i=>i.id===id);
+  if(item){ item.name=name; saveDB(); }
+}
+
+function deleteBudgetItem(mode, id){
+  if(!confirm('ลบหมวดนี้? รายการที่บันทึกไว้จะยังคงอยู่')) return;
+  if(mode==='cat') DB.budgetCats=(DB.budgetCats||[]).filter(i=>i.id!==id);
+  else DB.budgetIncome=(DB.budgetIncome||[]).filter(i=>i.id!==id);
+  saveDB(); renderBudgetEditBody();
+}
+
+function addBudgetItem(){
+  const name = prompt('ชื่อหมวดใหม่:');
+  if(!name?.trim()) return;
+  const newItem = {id:uid(), name:name.trim(), icon:'📦', monthly:0};
+  if(_budgetEditMode==='cat'){
+    if(!DB.budgetCats) DB.budgetCats=[];
+    DB.budgetCats.push(newItem);
+  } else {
+    if(!DB.budgetIncome) DB.budgetIncome=[];
+    DB.budgetIncome.push(newItem);
+  }
+  saveDB(); renderBudgetEditBody();
+  // scroll to new item
+  setTimeout(()=>{
+    const list=document.getElementById('bge-list');
+    if(list) list.lastElementChild?.scrollIntoView({behavior:'smooth'});
+  },100);
+}
+
+function saveBudgetEdit(){
+  const body = document.getElementById('mbudget-body');
+  body.querySelectorAll('input[data-id]').forEach(input=>{
+    const mode = input.dataset.mode;
+    const id = input.dataset.id;
+    const val = parseFloat(input.value)||0;
+    const items = mode==='cat'?(DB.budgetCats||[]):(DB.budgetIncome||[]);
+    const item = items.find(i=>i.id===id);
+    if(item) item.monthly=val;
+  });
+  saveDB(); cm('m-budget'); toast('บันทึกงบประมาณแล้ว ✅'); rBudget();
+}
+
+/* ══ INIT ════════════════════════════════════════════════════════════ */
+loadDB();
+// init lang button text
+document.getElementById('lang-btn').textContent = _lang==='th'?'EN':'ไทย';
+// populate nav labels on first load
+applyLangToNav();
+go('dash');
+
+// PIN CHECK ON LOAD
+if(hasPIN()){
+  lockApp();
+  // after unlock → load prices
+  const _origUnlock = unlockApp;
+  window.unlockApp = function(){
+    _origUnlock();
+    fetchPrices();
+    setInterval(fetchPrices,5*60*1000);
+  };
+} else {
+  fetchPrices();
+  setInterval(fetchPrices,5*60*1000);
+}
+
+// inject PIN settings card into dashboard
+const _origRDash = rDash;
+window.rDash = function(){
+  _origRDash();
+  // append pin card to dash page
+  const pg = document.getElementById('pg-dash');
+  if(pg){
+    let pc = document.getElementById('pin-settings-card');
+    if(!pc){
+      pc = document.createElement('div');
+      pc.id = 'pin-settings-card';
+      pc.className = 'card';
+      pg.appendChild(pc);
+    }
+    renderPinSettingsCard(pc);
+  }
+};
+rDash(); // re-run to inject pin card
+
+if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+let dPmt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();dPmt=e;setTimeout(()=>toast('💡 กด "เพิ่มลงหน้าจอหลัก" เพื่อติดตั้งเป็น App'),5000);});
+</script>
+</body>
+</html>
